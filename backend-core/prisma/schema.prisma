@@ -1,0 +1,226 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js" 
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+model User {
+  id                String        @id @default(cuid())
+  name              String
+  phoneNumber       String        @unique
+  password          String
+  location          String?
+  userType          UserType      @default(FARMER)
+  registrationDate  DateTime      @default(now())
+  rating            Float         @default(0.0)
+  profileInfo       String?
+  
+  // Relations
+  products          Product[]
+  ordersAsBuyer     Order[]       @relation("BuyerOrders")
+  ordersAsFarmer    Order[]       @relation("FarmerOrders")
+  reviewsGiven      Review[]      @relation("ReviewerReviews")
+  reviewsReceived   Review[]      @relation("ReviewedUserReviews")
+  
+  // Negotiation relations
+  negotiationsAsBuyer   Negotiation[] @relation("NegotiationBuyer")
+  negotiationsAsFarmer  Negotiation[] @relation("NegotiationFarmer")
+  
+  // Chat relations
+  chatsAsUser1      Chat[]        @relation("ChatUser1")
+  chatsAsUser2      Chat[]        @relation("ChatUser2")
+  messages          Message[]
+  
+  @@map("users")
+}
+
+enum UserType {
+  FARMER
+  BUYER
+  ADMIN
+}
+
+model Product {
+  id           String        @id @default(cuid())
+  name         String
+  category     String
+  quantity     Float
+  unit         String
+  price        Float
+  harvestDate  DateTime?
+  quality      String?
+  images       String[]      // Array of image URLs
+  isAvailable  Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  // Relations
+  farmerId     String
+  farmer       User          @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  orders       OrderItem[]
+  negotiations Negotiation[]
+  
+  @@map("products")
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  status          OrderStatus   @default(PENDING)
+  orderDate       DateTime      @default(now())
+  deliveryDate    DateTime?
+  totalAmount     Float
+  deliveryAddress String
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  buyerId         String
+  buyer           User          @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  
+  farmerId        String
+  farmer          User          @relation("FarmerOrders", fields: [farmerId], references: [id], onDelete: Cascade)
+  
+  items           OrderItem[]
+  review          Review?
+  
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  quantity    Float
+  price       Float
+  total       Float
+  notes       String?
+  
+  // Relations
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  
+  @@map("order_items")
+}
+
+model Negotiation {
+  id            String          @id @default(cuid())
+  originalPrice Float
+  proposedPrice Float
+  status        NegotiationStatus @default(PENDING)
+  startTime     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  
+  // Relations
+  productId     String
+  product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  buyerId       String
+  buyer         User            @relation("NegotiationBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  
+  farmerId      String
+  farmer        User            @relation("NegotiationFarmer", fields: [farmerId], references: [id], onDelete: Cascade)
+  
+  messages      NegotiationMessage[]
+  
+  @@map("negotiations")
+}
+
+enum NegotiationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+  EXPIRED
+  CANCELLED
+}
+
+model NegotiationMessage {
+  id             String      @id @default(cuid())
+  content        String
+  senderId       String
+  senderType     UserType
+  createdAt      DateTime    @default(now())
+  
+  // Relations
+  negotiationId  String
+  negotiation    Negotiation @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
+  
+  @@map("negotiation_messages")
+}
+
+model Review {
+  id          String    @id @default(cuid())
+  rating      Float     @default(0.0)
+  comment     String?
+  reviewDate  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  reviewerId  String
+  reviewer    User      @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  
+  reviewedId  String
+  reviewed    User      @relation("ReviewedUserReviews", fields: [reviewedId], references: [id], onDelete: Cascade)
+  
+  orderId     String    @unique
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@map("reviews")
+}
+
+model Chat {
+  id                String    @id @default(cuid())
+  lastMessage       String?
+  lastMessageTime   DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  user1Id           String
+  user1             User      @relation("ChatUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  
+  user2Id           String
+  user2             User      @relation("ChatUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  
+  messages          Message[]
+  
+  @@unique([user1Id, user2Id])
+  @@map("chats")
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  content     String
+  senderId    String
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  
+  // Relations
+  chatId      String
+  chat        Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  
+  sender      User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  
+  @@map("messages")
+}
+
