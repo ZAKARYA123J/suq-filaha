@@ -41,6 +41,10 @@ export class ChatController {
   async saveMessage(req: AuthRequest, res: Response) {
     try {
       const { chatId } = req.params;
+      if(!chatId){
+        res.status(404).send({error:"chat id not found"})
+      }
+      console.log(chatId)
       const result = await chatService.saveMessage(chatId, req.body);
       res.json(result);
     } catch (error: any) {

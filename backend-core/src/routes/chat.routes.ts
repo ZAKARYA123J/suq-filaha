@@ -7,10 +7,10 @@ import { createChatSchema, sendMessageSchema, markReadSchema } from '../validato
 const router = Router();
 const chatController = new ChatController();
 
-router.get('/', chatController.getUserChats);
-router.get('/:chatId', chatController.getChat);
-router.post('/', authenticate, validate(createChatSchema), chatController.createChat);
-router.post('/:chatId/messages', validate(sendMessageSchema), chatController.saveMessage);
-router.patch('/:chatId/read', validate(markReadSchema), chatController.markAsRead);
+router.get('/',authenticate, chatController.getUserChats);
+router.get('/:chatId',authenticate, chatController.getChat);
+// router.post('/', authenticate, validate(createChatSchema), chatController.createChat);
+router.post('/:chatId/messages', authenticate, chatController.saveMessage);
+router.patch('/:chatId/read',authenticate, validate(markReadSchema), chatController.markAsRead);
 
 export default router;

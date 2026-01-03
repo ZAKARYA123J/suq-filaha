@@ -14,7 +14,8 @@ defmodule RealtimeGateway.Application do
       # Start a worker by calling: RealtimeGateway.Worker.start_link(arg)
       # {RealtimeGateway.Worker, arg},
       # Start to serve requests, typically the last entry
-      RealtimeGatewayWeb.Endpoint
+      RealtimeGatewayWeb.Endpoint,
+      RealtimeGatewayWeb.Presence
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

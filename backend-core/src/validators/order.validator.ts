@@ -5,7 +5,7 @@ export const createOrderSchema = z.object({
   deliveryAddress: z.string().min(5),
   items: z.string(),
   notes: z.string().optional(),
-  deliveryDate: z.string().datetime().optional(),
+  deliveryDate: z.string().optional(),
 });
 
 export const updateOrderStatusSchema = z.object({

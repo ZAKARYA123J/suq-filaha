@@ -13,7 +13,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new Error('Phone number already registered');
+      throw new Error('already registered');
     }
 
     const hashedPassword = await argon2.hash(data.password);
@@ -35,7 +35,7 @@ export class AuthService {
     });
 
     const token = this.generateToken(user.id, data.userType);
-
+   
     return { user, token };
   }
 
@@ -55,17 +55,22 @@ export class AuthService {
     }
 
     const token = this.generateToken(user.id, user.userType);
-
+     const chatToken=this.chatToken(user.id, user.userType,user.name,data.phoneNumber)
     const { password, ...userWithoutPassword } = user;
 
-    return { user: userWithoutPassword, token };
+    return { user: userWithoutPassword, token,chatToken };
+  }  
+   
+  private chatToken(userId:string,userType:string,phoneNumber:string,name:string):string{
+   const payloud={userId,userType,phoneNumber,name}
+   return jwt.sign(payloud,config.jwtSecret,{algorithm:"HS256"})
   }
-
   private generateToken(userId: string, userType: string): string {
+     const payloud={userId,userType}
     return jwt.sign(
-      { userId, userType },
+      payloud,
       config.jwtSecret,
-      { expiresIn: config.jwtExpiration }
+      {algorithm:"HS256",expiresIn: config.jwtExpiration }
     );
   }
 

@@ -3,11 +3,13 @@ defmodule RealtimeGatewayWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug RealtimeGatewayWeb.Plugs.ApiKeyAuth
   end
 
   scope "/api", RealtimeGatewayWeb do
     pipe_through :api
-  end
+    post "/webhooks/chat-event", WebhookController, :chat_event
+    end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:realtime_gateway, :dev_routes) do

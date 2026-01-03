@@ -8,6 +8,8 @@
 import Config
 
 config :realtime_gateway,
+  phoenix_api_key: System.get_env("PHOENIX_API_KEY") || "your-secret-api-key",
+  jwt_secret: System.get_env("JWT_SECRET") || "your-super-secret-key-here-make-it-long-and-random",
   generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint

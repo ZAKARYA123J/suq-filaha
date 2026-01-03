@@ -11,9 +11,8 @@ defmodule RealtimeGatewayWeb.Endpoint do
     same_site: "Lax"
   ]
     socket "/socket", RealtimeGatewayWeb.UserSocket,
-    websocket: [
-    timeout: :infinity# Increase to 2 minutes (in milliseconds)
-        ]
+   websocket: true,
+    longpoll: false
 
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [session: @session_options]],

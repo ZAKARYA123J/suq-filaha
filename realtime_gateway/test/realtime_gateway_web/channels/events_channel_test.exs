@@ -4,7 +4,7 @@ defmodule RealtimeGatewayWeb.EventsChannelTest do
   setup do
     {:ok, _, socket} =
       RealtimeGatewayWeb.UserSocket
-      |> socket("user_id", %{some: :assign})
+      |> socket("userId", %{some: :assign})
       |> subscribe_and_join(RealtimeGatewayWeb.EventsChannel, "events:lobby")
 
     %{socket: socket}
