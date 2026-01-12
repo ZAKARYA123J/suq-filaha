@@ -1,0 +1,14 @@
+# docker-compose.yml
+version: '3.8'
+# docker-compose.yml (simplest)
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: suqfilaha
+    ports:
+      - "5433:5432"
+    # Data will be lost when container is removed
+# volumes:
+#   postgres-data:

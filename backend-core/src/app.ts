@@ -6,6 +6,8 @@ import chatRoutes from './routes/chat.routes';
 import productRoutes from './routes/product.routes';
 import orderRoutes from './routes/order.routes';
 import { errorHandler } from './middlewares/error.middleware';
+
+
 const app = express();
 
 app.use(cors({
