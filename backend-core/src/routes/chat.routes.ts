@@ -9,7 +9,7 @@ const chatController = new ChatController();
 
 router.get('/',authenticate, chatController.getUserChats);
 router.get('/:chatId',authenticate, chatController.getChat);
-// router.post('/', authenticate, validate(createChatSchema), chatController.createChat);
+router.post('/', authenticate, validate(createChatSchema), chatController.createChat);
 router.post('/:chatId/messages', authenticate, chatController.saveMessage);
 router.patch('/:chatId/read',authenticate, validate(markReadSchema), chatController.markAsRead);
 

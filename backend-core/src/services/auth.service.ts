@@ -4,40 +4,134 @@ import prisma from '../config/database';
 import { config } from '../config/env';
 import { RegisterInput, LoginInput } from '../validators/auth.validator';
 import 'dotenv/config';
-
+import { UserType } from '@/generated/prisma';
 
 export class AuthService {
-  async register(data: RegisterInput) {
-    const existingUser = await prisma.user.findUnique({
-      where: { phoneNumber: data.phoneNumber },
-    });
+  // async register(data: RegisterInput) {
+  //   const existingUser = await prisma.user.findUnique({
+  //     where: { phoneNumber: data.phoneNumber },
+  //   });
 
-    if (existingUser) {
-      throw new Error('already registered');
-    }
+  //   if (existingUser) {
+  //     throw new Error('already registered');
+  //   }
 
-    const hashedPassword = await argon2.hash(data.password);
+  //   const hashedPassword = await argon2.hash(data.password);
 
-    const user = await prisma.user.create({
-      data: {
-        ...data,
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-        name: true,
-        phoneNumber: true,
-        userType: true,
-        location: true,
-        rating: true,
-        registrationDate: true,
-      },
-    });
+  //   const user = await prisma.user.create({
+  //     data: {
+  //       ...data,
+  //       password: hashedPassword,
+  //     },
+  //     select: {
+  //       id: true,
+  //       name: true,
+  //       phoneNumber: true,
+  //       userType: true,
+  //       location: true,
+  //       rating: true,
+  //       registrationDate: true,
+  //     },
+  //   });
 
-    const token = this.generateToken(user.id, data.userType);
+  //   const token = this.generateToken(user.id, data.userType);
    
-    return { user, token };
+  //   return { user, token };
+  // }
+  async sendOtp(phoneNumber: string) {
+  const existingUser = await prisma.user.findUnique({
+    where: { phoneNumber },
+  });
+
+  if (existingUser) {
+    throw new Error('Phone number already registered');
   }
+
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  await prisma.phoneVerification.upsert({
+    where: { phoneNumber },
+    update: {
+      code,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      verified: false,
+    },
+    create: {
+      phoneNumber,
+      code,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    },
+  });
+
+  // await this.smsService.send(phoneNumber, `Your code is ${code}`);
+
+  return { message: 'OTP sent' };
+}
+async verifyOtp(phoneNumber: string, code: string) {
+  const verification = await prisma.phoneVerification.findUnique({
+    where: { phoneNumber },
+  });
+
+  if (!verification) {
+    throw new Error('OTP not found');
+  }
+
+  if (verification.code !== code) {
+    throw new Error('Invalid OTP');
+  }
+
+  if (verification.expiresAt < new Date()) {
+    throw new Error('OTP expired');
+  }
+
+  await prisma.phoneVerification.update({
+    where: { phoneNumber },
+    data: { verified: true },
+  });
+
+  return { message: 'Phone verified' };
+}
+async createPassword(data: {
+  phoneNumber: string;
+  password: string;
+  name: string;
+  userType: UserType;
+}) {
+  const verification = await prisma.phoneVerification.findUnique({
+    where: { phoneNumber: data.phoneNumber },
+  });
+
+  if (!verification || !verification.verified) {
+    throw new Error('Phone number not verified');
+  }
+
+  const hashedPassword = await argon2.hash(data.password);
+
+  const user = await prisma.user.create({
+    data: {
+      phoneNumber: data.phoneNumber,
+      password: hashedPassword,
+      name: data.name,
+      userType: data.userType,
+    },
+    select: {
+      id: true,
+      name: true,
+      phoneNumber: true,
+      userType: true,
+      registrationDate: true,
+    },
+  });
+
+  await prisma.phoneVerification.delete({
+    where: { phoneNumber: data.phoneNumber },
+  });
+
+  const token = this.generateToken(user.id, user.userType);
+
+  return { user, token };
+}
+
 
   async login(data: LoginInput) {
     const user = await prisma.user.findUnique({
@@ -65,7 +159,7 @@ export class AuthService {
    const payloud={userId,userType,phoneNumber,name}
    return jwt.sign(payloud,config.jwtSecret,{algorithm:"HS256"})
   }
-  private generateToken(userId: string, userType: string): string {
+  public generateToken(userId: string, userType: string): string {
      const payloud={userId,userType}
     return jwt.sign(
       payloud,

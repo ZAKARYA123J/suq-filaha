@@ -91,16 +91,16 @@ export class ChatService {
     });
 
     // Notify both users about the new chat
-    await Promise.allSettled([
-      realtimeClient.notifyUser(user1Id, 'chat_created', {
-        chatId: newChat.id,
-        otherUser: newChat.user2,
-      }),
-      realtimeClient.notifyUser(user2Id, 'chat_created', {
-        chatId: newChat.id,
-        otherUser: newChat.user1,
-      }),
-    ]);
+    // await Promise.allSettled([
+    //   realtimeClient.notifyUser(user1Id, 'chat_created', {
+    //     chatId: newChat.id,
+    //     otherUser: newChat.user2,
+    //   }),
+    //   realtimeClient.notifyUser(user2Id, 'chat_created', {
+    //     chatId: newChat.id,
+    //     otherUser: newChat.user1,
+    //   }),
+    // ]);
 
     return newChat;
   }
@@ -198,17 +198,17 @@ export class ChatService {
     if (unreadMessages.length > 0) {
       const senderIds = [...new Set(unreadMessages.map(msg => msg.senderId))];
       
-      await Promise.allSettled(
-        senderIds.map(senderId =>
-          realtimeClient.notifyUser(senderId, 'messages_read', {
-            chatId,
-            readBy: userId,
-            messageIds: unreadMessages
-              .filter(msg => msg.senderId === senderId)
-              .map(msg => msg.id),
-          })
-        )
-      );
+      // await Promise.allSettled(
+      //   senderIds.map(senderId =>
+      //     realtimeClient.notifyUser(senderId, 'messages_read', {
+      //       chatId,
+      //       readBy: userId,
+      //       messageIds: unreadMessages
+      //         .filter(msg => msg.senderId === senderId)
+      //         .map(msg => msg.id),
+      //     })
+      //   )
+      // );
 
       // Broadcast read status to the chat
       await realtimeClient.broadcastChatEvent(chatId, 'messages_read', {

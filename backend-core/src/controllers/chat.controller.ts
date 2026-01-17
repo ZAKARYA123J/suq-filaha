@@ -17,7 +17,7 @@ export class ChatController {
 
   async getChat(req: AuthRequest, res: Response) {
     try {
-      const chat = await chatService.getChat(req.params.chatId);
+      const chat = await chatService.getChat(req.params.chatId as string);
       if (!chat) {
         return res.status(404).json({ error: 'Chat not found' });
       }
@@ -45,7 +45,7 @@ export class ChatController {
         res.status(404).send({error:"chat id not found"})
       }
       console.log(chatId)
-      const result = await chatService.saveMessage(chatId, req.body);
+      const result = await chatService.saveMessage(chatId as string, req.body);
       res.json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -55,7 +55,7 @@ export class ChatController {
   async markAsRead(req: AuthRequest, res: Response) {
     try {
       const { chatId } = req.params;
-      const result = await chatService.markAsRead(chatId, req.body.userId);
+      const result = await chatService.markAsRead(chatId as string, req.body.userId);
       res.json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

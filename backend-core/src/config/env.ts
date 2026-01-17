@@ -1,10 +1,10 @@
-import type { StringValue } from 'ms';
+// import type { StringValue } from 'ms';
 
-const jwtExpiration = (process.env.JWT_EXPIRATION ?? '7d') as StringValue;
+const jwtExpiration = (process.env.JWT_EXPIRATION ?? '7d') as any;
 
 interface Config {
   jwtSecret: string;
-  jwtExpiration: StringValue | number;
+  jwtExpiration: any;
       port:string | number
     nodeEnv:string
     phoenixUrl:string

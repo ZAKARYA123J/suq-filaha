@@ -15,17 +15,17 @@ export class RealtimeClient {
     });
   }
 
-  async notifyUser(userId: string, type: string, data: any): Promise<void> {
-    try {
-      await this.axiosInstance.post('/api/webhooks/notify', {
-        user_id: userId,
-        type: type,
-        data: data,
-      });
-    } catch (error) {
-      console.error('Failed to send realtime notification:', error);
-    }
-  }
+  // async notifyUser(userId: string, type: string, data: any): Promise<void> {
+  //   try {
+  //     await this.axiosInstance.post('/api/webhooks/notify', {
+  //       user_id: userId,
+  //       type: type,
+  //       data: data,
+  //     });
+  //   } catch (error) {
+  //     console.error('Failed to send realtime notification:', error);
+  //   }
+  // }
 
   async broadcastChatEvent(chatId: string, event: string, data: any): Promise<void> {
     try {

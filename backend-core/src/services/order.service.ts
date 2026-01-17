@@ -72,12 +72,12 @@ export class OrderService {
     });
 
     // Send real-time notification to farmer
-    await realtimeClient.notifyUser(order.farmerId, 'order_update', {
-      type: 'new_order',
-      orderId: order.id,
-      message: `New order from ${order.buyer.name}`,
-      order: order,
-    });
+    // await realtimeClient.notifyUser(order.farmerId, 'order_update', {
+    //   type: 'new_order',
+    //   orderId: order.id,
+    //   message: `New order from ${order.buyer.name}`,
+    //   order: order,
+    // });
 
     return order;
   }
@@ -160,19 +160,19 @@ export class OrderService {
     });
 
     // Send real-time notifications to both parties
-    await realtimeClient.notifyUser(order.buyerId, 'order_update', {
-      type: 'status_change',
-      orderId: order.id,
-      status: status,
-      message: `Order status updated to ${status}`,
-    });
+    // await realtimeClient.notifyUser(order.buyerId, 'order_update', {
+    //   type: 'status_change',
+    //   orderId: order.id,
+    //   status: status,
+    //   message: `Order status updated to ${status}`,
+    // });
 
-    await realtimeClient.notifyUser(order.farmerId, 'order_update', {
-      type: 'status_change',
-      orderId: order.id,
-      status: status,
-      message: `Order status updated to ${status}`,
-    });
+    // await realtimeClient.notifyUser(order.farmerId, 'order_update', {
+    //   type: 'status_change',
+    //   orderId: order.id,
+    //   status: status,
+    //   message: `Order status updated to ${status}`,
+    // });
 
     return updatedOrder;
   }

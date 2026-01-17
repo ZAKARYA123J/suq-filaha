@@ -70,6 +70,14 @@ model Product {
   
   @@map("products")
 }
+model PhoneVerification {
+  id          String   @id @default(uuid())
+  phoneNumber String   @unique
+  code        String
+  expiresAt   DateTime
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
 
 model Order {
   id              String        @id @default(cuid())

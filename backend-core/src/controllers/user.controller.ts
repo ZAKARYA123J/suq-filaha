@@ -7,7 +7,7 @@ const authService = new AuthService();
 export class UserController {
   async getUser(req: AuthRequest, res: Response) {
     try {
-      const user = await authService.getUser(req.params.userId);
+      const user = await authService.getUser(req.params.userId as string);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
