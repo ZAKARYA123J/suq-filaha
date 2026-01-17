@@ -12,6 +12,23 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+enum UserType {
+  FARMER
+  BUYER
+  ADMIN
+}
+enum NegotiationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
 model User {
   id                String        @id @default(cuid())
   name              String
@@ -40,12 +57,6 @@ model User {
   messages          Message[]
   
   @@map("users")
-}
-
-enum UserType {
-  FARMER
-  BUYER
-  ADMIN
 }
 
 model Product {
@@ -95,14 +106,7 @@ model Order {
   @@map("orders")
 }
 
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
+
 
 model OrderItem {
   id          String   @id @default(cuid())
@@ -142,15 +146,6 @@ model Negotiation {
   messages      NegotiationMessage[]
   
   @@map("negotiations")
-}
-
-enum NegotiationStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  COUNTERED
-  EXPIRED
-  CANCELLED
 }
 
 model NegotiationMessage {

@@ -36,7 +36,7 @@ export class AuthService {
 
     const token = this.generateToken(user.id, data.userType);
    
-    return { user, token };
+    return {token };
   }
 
   async login(data: LoginInput) {
