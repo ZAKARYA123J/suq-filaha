@@ -7,24 +7,35 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-const OnboardingScreen = ({ navigation }:any) => {
+
+interface OnboardingScreenProps {
+  navigation: any;
+  onComplete?: () => void;
+}
+
+const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation, onComplete }) => {
+  const handleNext = () => {
+    if (onComplete) {
+      onComplete();
+    }
+    navigation.navigate('PhoneInput');
+  };
+
   return (
     <SafeAreaProvider style={styles.container}>
       <ImageBackground
-        source={require('../assets/obrdingimage.png')} // your image path
+        source={require('../assets/obrdingimage.png')}
         style={styles.background}
         resizeMode="cover"
       >
         <View style={styles.overlay}>
           <Text style={styles.title}>Direct from the{'\n'}Farm</Text>
-
           <Text style={styles.subtitle}>
             Buy and sell directly without{'\n'}intermediaries
           </Text>
-
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.navigate('NextScreen')}
+            onPress={handleNext}
           >
             <Text style={styles.buttonText}>Next</Text>
           </TouchableOpacity>
@@ -35,6 +46,8 @@ const OnboardingScreen = ({ navigation }:any) => {
 };
 
 export default OnboardingScreen;
+
+// ... styles remain the same
 
 const styles = StyleSheet.create({
   container: {

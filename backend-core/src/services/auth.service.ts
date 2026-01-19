@@ -5,7 +5,7 @@ import { config } from '../config/env';
 import { RegisterInput, LoginInput } from '../validators/auth.validator';
 import 'dotenv/config';
 import { UserType } from '@/generated/prisma';
-
+import sendViaIAMAPI from "./sms.service"
 export class AuthService {
   // async register(data: RegisterInput) {
   //   const existingUser = await prisma.user.findUnique({
@@ -38,34 +38,44 @@ export class AuthService {
    
   //   return { user, token };
   // }
-  async sendOtp(phoneNumber: string) {
-  const existingUser = await prisma.user.findUnique({
-    where: { phoneNumber },
-  });
+async sendOtp(phoneNumber: string) {
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: { phoneNumber },
+    });
 
-  if (existingUser) {
-    throw new Error('Phone number already registered');
+    if (existingUser) {
+      throw new Error('Phone number already registered');
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await prisma.phoneVerification.upsert({
+      where: { phoneNumber },
+      update: {
+        code,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        verified: false,
+      },
+      create: {
+        phoneNumber,
+        code,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      },
+    });
+
+    const smsResponse = await sendViaIAMAPI(phoneNumber, `Your code is ${code}`) as any;
+    
+    // Optional: Check SMS API response
+    if (!smsResponse.success) {
+      throw new Error('Failed to send OTP');
+    }
+
+    return { message: 'OTP sent' };
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+    throw error;
   }
-
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-  await prisma.phoneVerification.upsert({
-    where: { phoneNumber },
-    update: {
-      code,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-      verified: false,
-    },
-    create: {
-      phoneNumber,
-      code,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-    },
-  });
-
-  // await this.smsService.send(phoneNumber, `Your code is ${code}`);
-
-  return { message: 'OTP sent' };
 }
 async verifyOtp(phoneNumber: string, code: string) {
   const verification = await prisma.phoneVerification.findUnique({

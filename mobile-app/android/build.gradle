@@ -14,8 +14,12 @@ buildscript {
     dependencies {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")   
     }
+    configurations.all {
+    exclude group: "com.android.support", module: "support-compat"
+}
+
 }
 
 apply plugin: "com.facebook.react.rootproject"

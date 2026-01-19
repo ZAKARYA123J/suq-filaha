@@ -72,7 +72,7 @@ export class ProductService {
         negotiations: {
           where: {
             status: {
-              in: ['PENDING', 'COUNTERED'],
+              in: ['PENDING'],
             },
           },
           select: {
