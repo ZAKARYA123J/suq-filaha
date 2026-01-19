@@ -7,20 +7,25 @@ import {
     TouchableOpacity,
     ScrollView,
     Image,
+    RefreshControl,
     ActivityIndicator,
     Alert,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import { apiClient, getErrorMessage } from '../services/api';
 
 const EditProfileScreen = ({ navigation }: any) => {
     const { user, setUser } = useAuthStore();
-    const [name, setName] = useState(user?.name || '');
-    const [location, setLocation] = useState(user?.location || '');
-    const [profileInfo, setProfileInfo] = useState(user?.profileInfo || '');
+
+    const [name, setName] = useState(user?.name ?? '');
+    const [location, setLocation] = useState(user?.location ?? '');
+    const [profileInfo, setProfileInfo] = useState(user?.profileInfo ?? '');
+
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
     const handleUpdate = async () => {
         try {
@@ -40,6 +45,25 @@ const EditProfileScreen = ({ navigation }: any) => {
         }
     };
 
+    const fetchProfileData = async () => {
+        try {
+            const me = await apiClient.getMyProfile();
+            setUser(me);
+            setName(me.name ?? '');
+            setLocation(me.location ?? '');
+            setProfileInfo(me.profileInfo ?? '');
+        } catch (error) {
+            Alert.alert('Error', getErrorMessage(error));
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    const onRefresh = () => {
+        setRefreshing(true);
+        fetchProfileData();
+    };
+
     const handlePickImage = async () => {
         const result = await launchImageLibrary({
             mediaType: 'photo',
@@ -47,14 +71,14 @@ const EditProfileScreen = ({ navigation }: any) => {
         });
 
         if (result.didCancel) return;
+
         if (result.errorMessage) {
             Alert.alert('Error', result.errorMessage);
             return;
         }
 
-        if (result.assets && result.assets[0]) {
-            const asset = result.assets[0];
-            handleUploadImage(asset);
+        if (result.assets?.[0]) {
+            handleUploadImage(result.assets[0]);
         }
     };
 
@@ -64,7 +88,7 @@ const EditProfileScreen = ({ navigation }: any) => {
             const formData = new FormData();
             formData.append('avatar', {
                 uri: asset.uri,
-                name: asset.fileName || 'profile.jpg',
+                name: asset.fileName || 'avatar.jpg',
                 type: asset.type || 'image/jpeg',
             } as any);
 
@@ -79,91 +103,116 @@ const EditProfileScreen = ({ navigation }: any) => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Text style={styles.backText}>Cancel</Text>
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Edit Profile</Text>
-                <TouchableOpacity onPress={handleUpdate} disabled={loading}>
-                    {loading ? (
-                        <ActivityIndicator size="small" color="#10b981" />
-                    ) : (
-                        <Text style={styles.saveText}>Save</Text>
-                    )}
-                </TouchableOpacity>
-            </View>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#10b981']}
+                        tintColor="#10b981"
+                    />
+                }
+            >
+                <View style={styles.container}>
+                    <View style={styles.header}>
+                        <TouchableOpacity onPress={() => navigation.goBack()}>
+                            <Text style={styles.backText}>Cancel</Text>
+                        </TouchableOpacity>
 
-            <ScrollView style={styles.form}>
-                <View style={styles.avatarSection}>
-                    <TouchableOpacity
-                        style={styles.avatarContainer}
-                        onPress={handlePickImage}
-                        disabled={uploading}
-                    >
-                        {user?.profileInfo && user.profileInfo.startsWith('http') ? (
-                            <Image source={{ uri: user.profileInfo }} style={styles.avatar} />
-                        ) : (
-                            <View style={styles.placeholderAvatar}>
-                                <Text style={styles.placeholderText}>
-                                    {user?.name?.charAt(0).toUpperCase()}
-                                </Text>
-                            </View>
-                        )}
-                        {uploading && (
-                            <View style={styles.uploadOverlay}>
-                                <ActivityIndicator color="#fff" />
-                            </View>
-                        )}
-                        <View style={styles.cameraIcon}>
-                            <Text style={styles.cameraIconText}>📷</Text>
+                        <Text style={styles.headerTitle}>Edit Profile</Text>
+
+                        <TouchableOpacity onPress={handleUpdate} disabled={loading}>
+                            {loading ? (
+                                <ActivityIndicator size="small" color="#10b981" />
+                            ) : (
+                                <Text style={styles.saveText}>Save</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.form}>
+                        <View style={styles.avatarSection}>
+                            <TouchableOpacity
+                                style={styles.avatarContainer}
+                                onPress={handlePickImage}
+                                disabled={uploading}
+                            >
+                                {user?.avatar as undefined ? (
+                                    <Image source={{ uri: user?.avatar }} style={styles.avatar} />
+                                ) : (
+                                    <View style={styles.placeholderAvatar}>
+                                        <Text style={styles.placeholderText}>
+                                            {user?.name?.charAt(0)?.toUpperCase()}
+                                        </Text>
+                                    </View>
+                                )}
+
+                                {uploading && (
+                                    <View style={styles.uploadOverlay}>
+                                        <ActivityIndicator color="#fff" />
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity onPress={handlePickImage}>
+                                <Text style={styles.changePhotoText}>Change Profile Photo</Text>
+                            </TouchableOpacity>
                         </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={handlePickImage}>
-                        <Text style={styles.changePhotoText}>Change Profile Photo</Text>
-                    </TouchableOpacity>
-                </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Full Name</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={name}
-                        onChangeText={setName}
-                        placeholder="Enter your name"
-                    />
-                </View>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Full Name</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={name}
+                                onChangeText={setName}
+                                placeholder="Enter your name"
+                            />
+                        </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Location</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={location}
-                        onChangeText={setLocation}
-                        placeholder="City, Region"
-                    />
-                </View>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Location</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={location}
+                                onChangeText={setLocation}
+                                placeholder="City, Region"
+                            />
+                        </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>About / Bio</Text>
-                    <TextInput
-                        style={[styles.input, styles.textArea]}
-                        value={profileInfo && !profileInfo.startsWith('http') ? profileInfo : ''}
-                        onChangeText={setProfileInfo}
-                        placeholder="Tell us about yourself or your farm..."
-                        multiline
-                        numberOfLines={4}
-                    />
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>About / Bio</Text>
+                            <TextInput
+                                style={[styles.input, styles.textArea]}
+                                value={profileInfo}
+                                onChangeText={setProfileInfo}
+                                placeholder="Tell us about yourself..."
+                                multiline
+                            />
+                        </View>
+                    </View>
                 </View>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 };
+
+export default EditProfileScreen;
+
+
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+    },
+       safeArea: {
+        flex: 1,
+        backgroundColor: '#f9fafb',
+    },
+    scrollContent: {
+        paddingBottom: 40,
     },
     header: {
         flexDirection: 'row',
@@ -267,5 +316,3 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top',
     },
 });
-
-export default EditProfileScreen;

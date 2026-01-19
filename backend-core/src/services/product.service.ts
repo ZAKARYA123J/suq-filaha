@@ -26,6 +26,7 @@ export class ProductService {
     category?: string;
     farmerId?: string;
     isAvailable?: boolean;
+    
   }) {
     return await prisma.product.findMany({
       where: filters,
@@ -47,7 +48,7 @@ export class ProductService {
 
   async getProductById(productId: string) {
     return await prisma.product.findUnique({
-      where: { id: productId },
+      where: { id: productId},
       include: {
         farmer: {
           select: {

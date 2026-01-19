@@ -28,7 +28,7 @@ export class OrderController {
 
   async getById(req: AuthRequest, res: Response) {
     try {
-      const order = await orderService.getOrderById(req.params.id);
+      const order = await orderService.getOrderById(req.params.id as any) 
       if (!order) {
         return res.status(404).json({ error: 'Order not found' });
       }
@@ -41,7 +41,7 @@ export class OrderController {
   async updateStatus(req: AuthRequest, res: Response) {
     try {
       const order = await orderService.updateOrderStatus(
-        req.params.id,
+        req.params.id as any,
         req.user!.userId,
         req.body.status
       );

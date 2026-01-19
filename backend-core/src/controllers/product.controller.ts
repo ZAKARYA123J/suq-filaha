@@ -16,7 +16,7 @@ export class ProductController {
 
   async getAll(req: AuthRequest, res: Response) {
     try {
-      const { category, farmerId, isAvailable } = req.query;
+      const { category, isAvailable, farmerId } = req.query;
       const products = await productService.getProducts({
         category: category as string,
         farmerId: farmerId as string,
@@ -57,6 +57,87 @@ export class ProductController {
     try {
       await productService.deleteProduct(req.params.id as string, req.user!.userId);
       res.status(204).send();
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async search(req: AuthRequest, res: Response) {
+    try {
+      const { q, category, minPrice, maxPrice, isAvailable } = req.query;
+      
+      if (!q) {
+        return res.status(400).json({ error: 'Search term (q) is required' });
+      }
+
+      const products = await productService.searchProducts(q as string, {
+        category: category as string,
+        minPrice: minPrice ? parseFloat(minPrice as string) : undefined,
+        maxPrice: maxPrice ? parseFloat(maxPrice as string) : undefined,
+        isAvailable: isAvailable === 'true' ? true : isAvailable === 'false' ? false : undefined,
+      });
+      
+      res.json(products);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async getFarmerProducts(req: AuthRequest, res: Response) {
+    try {
+      const { farmerId } = req.params;
+      const { isAvailable } = req.query;
+      
+      const products = await productService.getFarmerProducts(
+        farmerId as string,
+        isAvailable === 'true' ? true : isAvailable === 'false' ? false : undefined
+      );
+      
+      res.json(products);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async getMyProducts(req: AuthRequest, res: Response) {
+    try {
+      const { isAvailable } = req.query;
+      
+      const products = await productService.getFarmerProducts(
+        req.user!.userId,
+        isAvailable === 'true' ? true : isAvailable === 'false' ? false : undefined
+      );
+      
+      res.json(products);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async toggleAvailability(req: AuthRequest, res: Response) {
+    try {
+      const product = await productService.toggleProductAvailability(
+        req.params.id as string,
+        req.user!.userId
+      );
+      
+      res.json(product);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  async getByCategory(req: AuthRequest, res: Response) {
+    try {
+      const { category } = req.params;
+      
+      if (!category) {
+        return res.status(400).json({ error: 'Category is required' });
+      }
+
+      const products = await productService.getProductsByCategory(category as string);
+      
+      res.json(products);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
     }

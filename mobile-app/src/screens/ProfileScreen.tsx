@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import { apiClient, getErrorMessage } from '../services/api';
-
+import { SafeAreaFrameContext } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 const ProfileScreen = ({ navigation }: any) => {
     const { user, setUser } = useAuthStore();
     const [loading, setLoading] = useState(true);
@@ -68,7 +69,19 @@ const ProfileScreen = ({ navigation }: any) => {
     );
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={['#10b981']}
+                    tintColor="#10b981"
+                />
+            }
+        >
+     
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={
@@ -142,14 +155,20 @@ const ProfileScreen = ({ navigation }: any) => {
                     <Text style={styles.editButtonText}>Edit Profile</Text>
                 </TouchableOpacity>
             </ScrollView>
-        </View>
+            </ScrollView>
+    
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+   
+      safeArea: {
         flex: 1,
         backgroundColor: '#f9fafb',
+    },
+    scrollContent: {
+        paddingBottom: 40,
     },
     centerContainer: {
         flex: 1,
@@ -157,9 +176,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#fff',
     },
-    scrollContent: {
-        paddingBottom: 40,
-    },
+ 
     header: {
         alignItems: 'center',
         paddingVertical: 30,

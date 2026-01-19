@@ -12,6 +12,7 @@ export interface User {
     rating: number;
     profileInfo?: string;
     registrationDate: string;
+    avatar:string
 }
 
 interface AuthState {
@@ -21,7 +22,6 @@ interface AuthState {
     chatToken: string | null;
     isAuthenticated: boolean;
     isLoading: boolean;
-
     // Registration flow state
     phoneNumber: string;
     isPhoneVerified: boolean;

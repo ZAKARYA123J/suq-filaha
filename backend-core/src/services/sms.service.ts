@@ -8,9 +8,9 @@ export default async function sendViaIAMAPI(phoneNumber: string, message: string
       },
       body: JSON.stringify({
         message: message,
-        to: phoneNumber,  // Format: +212XXXXXXXXX for Morocco
-        sender_id: 'SuqFilaha',  // Optional: Your brand name (max 11 chars)
-        bypass_optout: true  // For transactional messages like OTP
+        to: phoneNumber,  
+        sender_id: 'SuqFilaha',
+        bypass_optout: true 
       })
     });
 

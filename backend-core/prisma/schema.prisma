@@ -40,7 +40,6 @@ model User {
   rating            Float         @default(0.0)
   profileInfo       String?
   
-  // Relations
   products          Product[]
   ordersAsBuyer     Order[]       @relation("BuyerOrders")
   ordersAsFarmer    Order[]       @relation("FarmerOrders")
@@ -68,7 +67,7 @@ model Product {
   price        Float
   harvestDate  DateTime?
   quality      String?
-  images       String[]      // Array of image URLs
+  images       String[]    
   isAvailable  Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
