@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     },
     feature: {
         fontSize: 14,
-        color: '#10b981',
+        color: '#489163',
         fontWeight: '500',
     },
 });

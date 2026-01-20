@@ -127,7 +127,7 @@
 
 ## 🎨 UI/UX Features
 
-- ✅ Modern, clean design with green theme (#10b981)
+- ✅ Modern, clean design with green theme (#489163)
 - ✅ Consistent styling across all screens
 - ✅ Loading indicators for async operations
 - ✅ Error handling with user-friendly alerts

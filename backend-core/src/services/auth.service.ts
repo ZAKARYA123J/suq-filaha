@@ -6,6 +6,7 @@ import { RegisterInput, LoginInput } from '../validators/auth.validator';
 import 'dotenv/config';
 import { UserType } from '@/generated/prisma';
 import sendViaIAMAPI from "./sms.service"
+import crypto from "crypto";
 export class AuthService {
   // async register(data: RegisterInput) {
   //   const existingUser = await prisma.user.findUnique({
@@ -48,8 +49,7 @@ async sendOtp(phoneNumber: string) {
       throw new Error('Phone number already registered');
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-
+const code = crypto.randomInt(100000, 1000000).toString();
     await prisma.phoneVerification.upsert({
       where: { phoneNumber },
       update: {
@@ -77,6 +77,7 @@ async sendOtp(phoneNumber: string) {
     throw error;
   }
 }
+
 async verifyOtp(phoneNumber: string, code: string) {
   const verification = await prisma.phoneVerification.findUnique({
     where: { phoneNumber },
@@ -101,6 +102,7 @@ async verifyOtp(phoneNumber: string, code: string) {
 
   return { message: 'Phone verified' };
 }
+
 async createPassword(data: {
   phoneNumber: string;
   password: string;
@@ -141,7 +143,6 @@ async createPassword(data: {
 
   return { user, token };
 }
-
 
   async login(data: LoginInput) {
     const user = await prisma.user.findUnique({

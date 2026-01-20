@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 18,
-        color: '#10b981',
+        color: '#489163',
         fontWeight: '600',
     },
     profileCard: {
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     profileButton: {
-        backgroundColor: '#10b981',
+        backgroundColor: '#489163',
         borderRadius: 12,
         padding: 16,
         alignItems: 'center',

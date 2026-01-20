@@ -7,6 +7,10 @@ const orderService = new OrderService();
 export class OrderController {
   async create(req: AuthRequest, res: Response) {
     try {
+      const userId=req.user?.userId
+      if(!userId){
+        throw new Error("userId not found")
+      }
       const order = await orderService.createOrder(req.user!.userId, req.body);
       res.status(201).json(order);
     } catch (error: any) {

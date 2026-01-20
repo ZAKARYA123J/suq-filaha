@@ -7,8 +7,7 @@ import {
   StatusBar,
   // Dimensions
 } from 'react-native';
-
-// const { width, height } = Dimensions.get('window');
+import { fonts } from '../theme/fonts';// const { width, height } = Dimensions.get('window');
 
 interface SplashScreenProps {
   onAnimationComplete?: () => void;
@@ -52,30 +51,32 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onAnimationComplete }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF6E3',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 100,
   },
   englishTitle: {
     fontSize: 24,
+      fontFamily: fonts.bold,
     fontWeight: 'bold',
     color: '#000000',
     textAlign: 'center',
     marginBottom: 15,
   },
   logo: {
-    width: 134,
-    height: 134,
+    width: 200,
+    height: 200,
     marginBottom: 20,
   },
   tagline: {
     fontSize: 18,
     color: '#1D1A1A',
+      fontFamily: fonts.light,
     fontWeight: '300',
     letterSpacing: 0.5,
     textAlign: 'center',

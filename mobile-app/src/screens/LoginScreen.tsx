@@ -9,19 +9,23 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
+    Image,
 } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import { apiClient, getErrorMessage } from '../services/api';
-
+import { fonts } from '../theme/fonts';
+import { ScrollView } from 'react-native';
 interface LoginScreenProps {
     navigation: any;
 }
+import {SafeAreaView} from "react-native-safe-area-context"
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
     const { setAuth } = useAuthStore();
 
     const handleLogin = async () => {
@@ -39,8 +43,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         try {
             const response = await apiClient.login(phoneNumber, password);
             await setAuth(response.user, response.token, response.chatToken);
-
-            // Navigate to main app
             navigation.replace('Home');
         } catch (error) {
             Alert.alert('Login Failed', getErrorMessage(error));
@@ -50,174 +52,235 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
+      <SafeAreaView style={styles.safeArea}>
+    <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+    >
+        {/* ===== STATIC HEADER (DOES NOT MOVE) ===== */}
+        <View style={styles.headerContainer}>
+            <Image
+                source={require('../assets/logo.png')}
+                style={styles.logo}
+                resizeMode="contain"
+            />
+
+            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.subtitle}>
+                Login to continue to Suq l-Filaha
+            </Text>
+        </View>
+
+        {/* ===== SCROLLABLE FORM (MOVES WITH KEYBOARD) ===== */}
+        <ScrollView
+            contentContainerStyle={styles.formContainer}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
         >
-            <View style={styles.content}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Welcome Back</Text>
-                    <Text style={styles.subtitle}>
-                        Login to continue to Suq l-Filaha
-                    </Text>
-                </View>
+            {/* Phone */}
+            <View style={styles.inputGroup}>
+                <Text style={styles.label}>Phone Number</Text>
+                <TextInput
+                    style={styles.underlineInput}
+                    value={phoneNumber}
+                    onChangeText={setPhoneNumber}
+                    keyboardType="phone-pad"
+                />
+            </View>
 
-                <View style={styles.form}>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Phone Number</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter phone number"
-                            placeholderTextColor="#999"
-                            value={phoneNumber}
-                            onChangeText={setPhoneNumber}
-                            keyboardType="phone-pad"
-                            maxLength={15}
-                            editable={!isLoading}
-                        />
-                    </View>
+            {/* Password */}
+            <View style={styles.inputGroup}>
+                <Text style={styles.label}>Password</Text>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Password</Text>
-                        <View style={styles.passwordContainer}>
-                            <TextInput
-                                style={styles.passwordInput}
-                                placeholder="Enter password"
-                                placeholderTextColor="#999"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry={!showPassword}
-                                editable={!isLoading}
-                            />
-                            <TouchableOpacity
-                                onPress={() => setShowPassword(!showPassword)}
-                                style={styles.eyeButton}
-                            >
-                                <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                <View style={styles.passwordRow}>
+                    <TextInput
+                        style={styles.passwordInput}
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry={!showPassword}
+                    />
 
                     <TouchableOpacity
-                        style={[styles.button, isLoading && styles.buttonDisabled]}
-                        onPress={handleLogin}
-                        disabled={isLoading}
+                        onPress={() => setShowPassword(!showPassword)}
+                        style={styles.eyeButton}
                     >
-                        {isLoading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.buttonText}>Login</Text>
-                        )}
+                        <Image
+                            // source={
+                            //     showPassword
+                            //         ? require('../assets/eye-off.png')
+                            //         : require('../assets/eye.png')
+                            // }
+                            style={styles.eyeIcon}
+                        />
                     </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                    onPress={() => navigation.navigate('PhoneInput')}
-                    style={styles.linkContainer}
-                >
-                    <Text style={styles.linkText}>
-                        Don't have an account?{' '}
-                        <Text style={styles.linkBold}>Register</Text>
+                <TouchableOpacity style={styles.forgotPassword}>
+                    <Text style={styles.forgotPasswordText}>
+                        Forgot Password?
                     </Text>
                 </TouchableOpacity>
             </View>
-        </KeyboardAvoidingView>
+
+            {/* Login */}
+            <TouchableOpacity
+                style={styles.button}
+                onPress={handleLogin}
+            >
+                <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
+
+            {/* Register */}
+            <TouchableOpacity style={styles.registerContainer}  onPress={() => navigation.navigate('PhoneInput')} >
+                <Text style={styles.registerText}>
+                    Don't have an account?{' '}
+                    <Text style={styles.registerBold}>Register</Text>
+                </Text>
+            </TouchableOpacity>
+        </ScrollView>
+    </KeyboardAvoidingView>
+</SafeAreaView>
+
+
     );
 };
+
+export default LoginScreen;
+
+/* ======================= STYLES ======================= */
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#ffffff',
     },
     content: {
         flex: 1,
-        padding: 24,
-        justifyContent: 'center',
+        paddingHorizontal: 24,
+        // justifyContent: 'center',
     },
+    logoContainer: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+},
+
+headerContainer: {
+    alignItems: 'center',
+    paddingVertical: 32,
+},
+
+formContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+},
+
+logo: {
+    width: 200,
+    height: 200,
+    // marginBottom: 10,
+},
+
     header: {
-        marginBottom: 48,
+        marginBottom: 40,
+            alignItems: 'center',
     },
     title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#1a1a1a',
-        marginBottom: 12,
+        fontSize: 30,
+                fontWeight: 'bold',
+
+        fontFamily: fonts.bold,
+        color: '#111827',
+        marginBottom: 8,
+            textAlign: 'center',
     },
     subtitle: {
-        fontSize: 16,
-        color: '#666',
-        lineHeight: 24,
+        fontSize: 15,
+                fontWeight: 'regular',
+        fontFamily: fonts.regular,
+
+        color: '#6b7280',
+            textAlign: 'center',
     },
-    form: {
-        gap: 20,
-        marginBottom: 24,
-    },
+
     inputGroup: {
-        gap: 8,
+        marginBottom: 28,
     },
+    scrollContent: {
+    flexGrow: 1,
+    // justifyContent: 'center',
+},
+
     label: {
         fontSize: 14,
-        fontWeight: '600',
-        color: '#1a1a1a',
+        color: '#9ca3af',
+        marginBottom: 6,
     },
-    input: {
-        backgroundColor: '#f5f5f5',
-        borderRadius: 12,
-        padding: 16,
-        fontSize: 16,
-        color: '#1a1a1a',
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
+    underlineInput: {
+        fontSize: 20,
+        color: '#111827',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
     },
-    passwordContainer: {
+    passwordRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f5f5f5',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e5e7eb',
     },
     passwordInput: {
         flex: 1,
-        padding: 16,
-        fontSize: 16,
-        color: '#1a1a1a',
+        fontSize: 20,
+        color: '#111827',
+        paddingVertical: 8,
     },
     eyeButton: {
-        padding: 16,
+        paddingHorizontal: 6,
     },
     eyeIcon: {
-        fontSize: 20,
+        width: 20,
+        height: 20,
+        tintColor: '#6b7280',
     },
+    forgotPassword: {
+        alignSelf: 'flex-end',
+        marginTop: 12,
+    },
+    forgotPasswordText: {
+        fontSize: 14,
+        color: '#111827',
+    },
+
     button: {
-        backgroundColor: '#10b981',
+        backgroundColor: '#489163',
         borderRadius: 12,
-        padding: 16,
+        paddingVertical: 16,
         alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 56,
+        marginTop: 10,
     },
     buttonDisabled: {
         backgroundColor: '#86efac',
     },
     buttonText: {
-        color: '#fff',
+        color: '#ffffff',
         fontSize: 16,
         fontWeight: '600',
     },
-    linkContainer: {
+
+    registerContainer: {
         alignItems: 'center',
-        marginTop: 16,
+        marginTop: 24,
     },
-    linkText: {
+    registerText: {
         fontSize: 14,
-        color: '#666',
+        color: '#6b7280',
     },
-    linkBold: {
-        color: '#10b981',
+    registerBold: {
+        color: '#489163',
         fontWeight: '600',
     },
 });
-
-export default LoginScreen;

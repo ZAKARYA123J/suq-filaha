@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
         padding: 16,
         gap: 8,
         borderWidth: 1,
-        borderColor: '#10b981',
+        borderColor: '#489163',
     },
     infoText: {
         fontSize: 14,
@@ -275,10 +275,10 @@ const styles = StyleSheet.create({
     },
     infoBold: {
         fontWeight: '600',
-        color: '#10b981',
+        color: '#489163',
     },
     button: {
-        backgroundColor: '#10b981',
+        backgroundColor: '#489163',
         borderRadius: 12,
         padding: 16,
         alignItems: 'center',

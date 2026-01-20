@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { fonts } from '../theme/fonts';
+import LinearGradient from 'react-native-linear-gradient';
 
 interface OnboardingScreenProps {
   navigation: any;
@@ -33,11 +35,16 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation, onCompl
           <Text style={styles.subtitle}>
             Buy and sell directly without{'\n'}intermediaries
           </Text>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleNext}
-          >
-            <Text style={styles.buttonText}>Next</Text>
+          
+          <TouchableOpacity onPress={handleNext}>
+            <LinearGradient
+              colors={['#000000', '#0F9B0F']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.button}
+            >
+              <Text style={styles.buttonText}>Get Started</Text>
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </ImageBackground>
@@ -46,8 +53,6 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation, onCompl
 };
 
 export default OnboardingScreen;
-
-// ... styles remain the same
 
 const styles = StyleSheet.create({
   container: {
@@ -65,28 +70,32 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#FFFFFF',
-    fontSize: 34,
+    fontSize: 48,
     fontWeight: '700',
+    fontFamily: fonts.semiBold,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   subtitle: {
     color: '#FFFFFF',
     fontSize: 16,
+    fontFamily: fonts.bold,
     textAlign: 'center',
     opacity: 0.9,
-    marginBottom: 28,
+    marginBottom: 20,
   },
   button: {
-    width: '100%',
+    width: 327, // You can adjust this or use '90%' if preferred
     backgroundColor: '#FFF4E8',
     paddingVertical: 16,
     borderRadius: 30,
     alignItems: 'center',
+    marginBottom: 50,
   },
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: '#FFF', // Changed to white for better contrast on dark gradient
+    fontFamily: fonts.semiBold,
   },
 });

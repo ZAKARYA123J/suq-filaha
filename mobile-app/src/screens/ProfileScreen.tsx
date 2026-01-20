@@ -50,7 +50,7 @@ const ProfileScreen = ({ navigation }: any) => {
     if (loading && !refreshing) {
         return (
             <View style={styles.centerContainer}>
-                <ActivityIndicator size="large" color="#10b981" />
+                <ActivityIndicator size="large" color="#489163" />
             </View>
         );
     }
@@ -76,8 +76,8 @@ const ProfileScreen = ({ navigation }: any) => {
                 <RefreshControl
                     refreshing={refreshing}
                     onRefresh={onRefresh}
-                    colors={['#10b981']}
-                    tintColor="#10b981"
+                    colors={['#489163']}
+                    tintColor="#489163"
                 />
             }
         >
@@ -85,7 +85,7 @@ const ProfileScreen = ({ navigation }: any) => {
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#10b981']} tintColor="#10b981" />
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#489163']} tintColor="#489163" />
                 }
             >
                 <View style={styles.header}>
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: '#10b981',
+        backgroundColor: '#489163',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         right: 0,
-        backgroundColor: '#10b981',
+        backgroundColor: '#489163',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 12,
@@ -304,13 +304,13 @@ const styles = StyleSheet.create({
         margin: 16,
         backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#10b981',
+        borderColor: '#489163',
         paddingVertical: 12,
         borderRadius: 8,
         alignItems: 'center',
     },
     editButtonText: {
-        color: '#10b981',
+        color: '#489163',
         fontWeight: 'bold',
         fontSize: 16,
     },

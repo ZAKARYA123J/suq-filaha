@@ -3,23 +3,39 @@ import { CreateOrderInput } from '../validators/order.validator';
 import { realtimeClient } from './realtime.client';
 
 // Define the OrderItem type for better type safety
+
+
 interface OrderItemInput {
   productId: string;
-  quantity: number;
+  quantity: number; // Should match your schema (Float or Int)
   price: number;
   notes?: string;
 }
 
 export class OrderService {
-  async createOrder(buyerId: string, data: CreateOrderInput) {
-    // Ensure items is an array
-    const items: OrderItemInput[] = Array.isArray(data.items) 
-      ? data.items 
-      : JSON.parse(data.items);
+async createOrder(buyerId: string, data: CreateOrderInput) {
+  try {
+    // Parse items safely
+    let items: OrderItemInput[];
+    try {
+      items = Array.isArray(data.items) 
+        ? data.items 
+        : JSON.parse(data.items);
+    } catch (error) {
+      throw new Error('Invalid items format. Must be array or JSON array string');
+    }
 
-    // Fetch product and verify availability
-    const product = await prisma.product.findUnique({
-      where: { id: data.productId },
+    // Validate items
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error('Items must be a non-empty array');
+    }
+
+    // Fetch all products for validation
+    const productIds = items.map(item => item.productId);
+    const products = await prisma.product.findMany({
+      where: { 
+        id: { in: productIds }
+      },
       include: {
         farmer: {
           select: { id: true, name: true, phoneNumber: true },
@@ -27,20 +43,40 @@ export class OrderService {
       },
     });
 
-    if (!product || !product.isAvailable) {
-      throw new Error('Product not available');
+    // Check all products exist and are available
+    const productMap = new Map();
+    for (const product of products) {
+      productMap.set(product.id, product);
     }
 
-    // Calculate total amount from items
+    for (const item of items) {
+      const product = productMap.get(item.productId);
+      if (!product) {
+        throw new Error(`Product ${item.productId} not found`);
+      }
+      if (!product.isAvailable) {
+        throw new Error(`Product ${product.name} is not available`);
+      }
+    }
+
+    // Verify all items belong to the same farmer
+    const uniqueFarmerIds = [...new Set(products.map(p => p.farmerId))];
+    if (uniqueFarmerIds.length > 1) {
+      throw new Error('All items must belong to the same farmer');
+    }
+    
+    const farmerId = uniqueFarmerIds[0];
+
+    // Calculate total amount
     const totalAmount = items.reduce((sum, item) => {
       return sum + (item.quantity * item.price);
     }, 0);
 
-    // Create order with items
+    // Create order with items - JUST use buyerId, NOT buyer relation
     const order = await prisma.order.create({
       data: {
-        buyerId,
-        farmerId: product.farmerId,
+        buyerId, // This is sufficient - Prisma handles the relation via foreign key
+        farmerId,
         status: 'PENDING',
         totalAmount,
         deliveryAddress: data.deliveryAddress,
@@ -55,6 +91,7 @@ export class OrderService {
             notes: item.notes,
           })),
         },
+        // NO buyer: { connect: ... } needed here
       },
       include: {
         items: {
@@ -71,16 +108,21 @@ export class OrderService {
       },
     });
 
-    // Send real-time notification to farmer
-    // await realtimeClient.notifyUser(order.farmerId, 'order_update', {
-    //   type: 'new_order',
-    //   orderId: order.id,
-    //   message: `New order from ${order.buyer.name}`,
-    //   order: order,
-    // });
-
     return order;
+    
+  } catch (error) {
+    // Handle specific Prisma errors
+    // if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    //   if (error.code === 'P2003') {
+    //     throw new Error('Foreign key constraint failed. Check if buyer/farmer exists');
+    //   }
+    //   if (error.code === 'P2002') {
+    //     throw new Error('Unique constraint failed');
+    //   }
+    // }
+    throw error;
   }
+}
 
   async getOrders(userId: string, userType: string) {
     const where = userType === 'FARMER' ? { farmerId: userId } : { buyerId: userId };
@@ -105,7 +147,7 @@ export class OrderService {
       },
     });
   }
-
+  
   async getOrderById(orderId: string) {
     return await prisma.order.findUnique({
       where: { id: orderId },

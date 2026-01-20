@@ -248,7 +248,7 @@ curl -X PUT http://localhost:3000/api/auth/profile \
 
 ### Visual Design
 - [ ] All screens follow consistent design
-- [ ] Green theme (#10b981) is used correctly
+- [ ] Green theme (#489163) is used correctly
 - [ ] Buttons have proper styling
 - [ ] Input fields are clearly visible
 - [ ] Loading states are shown

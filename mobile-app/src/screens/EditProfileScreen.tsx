@@ -110,8 +110,8 @@ const EditProfileScreen = ({ navigation }: any) => {
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={onRefresh}
-                        colors={['#10b981']}
-                        tintColor="#10b981"
+                        colors={['#489163']}
+                        tintColor="#489163"
                     />
                 }
             >
@@ -125,7 +125,7 @@ const EditProfileScreen = ({ navigation }: any) => {
 
                         <TouchableOpacity onPress={handleUpdate} disabled={loading}>
                             {loading ? (
-                                <ActivityIndicator size="small" color="#10b981" />
+                                <ActivityIndicator size="small" color="#489163" />
                             ) : (
                                 <Text style={styles.saveText}>Save</Text>
                             )}
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
         color: '#111827',
     },
     saveText: {
-        color: '#10b981',
+        color: '#489163',
         fontSize: 16,
         fontWeight: 'bold',
     },
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
-        backgroundColor: '#10b981',
+        backgroundColor: '#489163',
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     changePhotoText: {
-        color: '#10b981',
+        color: '#489163',
         fontWeight: 'bold',
     },
     inputGroup: {
