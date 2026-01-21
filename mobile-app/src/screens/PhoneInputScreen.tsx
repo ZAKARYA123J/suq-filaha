@@ -71,7 +71,7 @@ const PhoneInputScreen: React.FC<PhoneInputScreenProps> = ({ navigation }) => {
           </Text>
         </View>
 
-        {/* ===== FORM ===== */}
+       
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Phone Number</Text>

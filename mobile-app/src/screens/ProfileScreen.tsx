@@ -8,11 +8,10 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     RefreshControl,
-    FlatList,
 } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import { apiClient, getErrorMessage } from '../services/api';
-import { SafeAreaFrameContext } from 'react-native-safe-area-context';
+// import { SafeAreaFrameContext } from 'react-native-safe-area-context';
 import { SafeAreaView } from 'react-native-safe-area-context';
 const ProfileScreen = ({ navigation }: any) => {
     const { user, setUser } = useAuthStore();
@@ -55,18 +54,18 @@ const ProfileScreen = ({ navigation }: any) => {
         );
     }
 
-    const renderReviewItem = ({ item }: any) => (
-        <View style={styles.reviewCard}>
-            <View style={styles.reviewHeader}>
-                <Text style={styles.reviewerName}>{item.reviewer?.name}</Text>
-                <Text style={styles.ratingText}>★ {item.rating}</Text>
-            </View>
-            <Text style={styles.reviewComment}>{item.comment}</Text>
-            <Text style={styles.reviewDate}>
-                {new Date(item.createdAt).toLocaleDateString()}
-            </Text>
-        </View>
-    );
+    // const renderReviewItem = ({ item }: any) => (
+    //     <View style={styles.reviewCard}>
+    //         <View style={styles.reviewHeader}>
+    //             <Text style={styles.reviewerName}>{item.reviewer?.name}</Text>
+    //             <Text style={styles.ratingText}>★ {item.rating}</Text>
+    //         </View>
+    //         <Text style={styles.reviewComment}>{item.comment}</Text>
+    //         <Text style={styles.reviewDate}>
+    //             {new Date(item.createdAt).toLocaleDateString()}
+    //         </Text>
+    //     </View>
+    // );
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>

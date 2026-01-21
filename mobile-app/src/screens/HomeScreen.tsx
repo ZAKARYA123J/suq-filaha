@@ -1,146 +1,285 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    StyleSheet,
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Dimensions,
+  FlatList,
+  Alert,
 } from 'react-native';
 import { useAuthStore } from '../store/authStore';
+import { apiClient } from '../services/api';
+import { Product, Farmer } from '../types';
+import Feather from 'react-native-vector-icons/Feather';
 
-interface HomeScreenProps {
-    navigation: any;
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width * 0.65;
+
+const categories = [
+  { id: 'grains', label: 'Grains', icon: '🌾' },
+  { id: 'veggie', label: 'Veggie', icon: '🥕' },
+  { id: 'fruits', label: 'Fruits', icon: '🍉' },
+  { id: 'livestock', label: 'Livestock', icon: '🐄' },
+  { id: 'tools', label: 'Tools', icon: '🔧' },
+];
+
+export default function HomeScreen({ navigation }: any) {
+  const { user, logout } = useAuthStore();
+  const [featured, setFeatured] = useState<Product[]>([]);
+  const [farmers, setFarmers] = useState<Farmer[]>([]);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    // featured harvests
+    apiClient
+      .getProducts()
+      .then((p) => setFeatured(p.slice(0, 6)))
+      .catch(() => {});
+
+    apiClient
+      .getFarmers() 
+      .then((f) => setFarmers(f.slice(0, 3)))
+      .catch(() => {});
+  }, []);
+
+  const renderHarvest = ({ item }: { item: Product }) => (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      style={[styles.harvestCard, { width: CARD_WIDTH }]}
+      onPress={() => navigation.navigate('ProductDetail', { id: item.id })}
+    >
+      <Image source={{ uri: item.images[0] }} style={styles.harvestImage} />
+      <View style={styles.harvestBadge}>
+        <Text style={styles.badgeTxt}>TOP QUALITY</Text>
+      </View>
+      <View style={styles.harvestInfo}>
+        <Text style={styles.harvestName}>{item.name}</Text>
+        <Text style={styles.harvestPrice}>
+          {item.price} SAR / {item.unit}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderFarmer = (f: Farmer) => (
+    <View key={f.id} style={styles.farmerRow}>
+      <Image source={{ uri: f.avatar }} style={styles.farmerAvatar} />
+      <View style={styles.farmerInfo}>
+        <Text style={styles.farmerName}>{f.name}</Text>
+        <Text style={styles.farmerCrop}>Main crop: {f.mainCrop}</Text>
+        <Text style={styles.farmerStars}>★★★★★ ({f.orderCount} orders)</Text>
+      </View>
+      <TouchableOpacity style={styles.contactBtn}>
+        <Text style={styles.contactBtnTxt}>Contact</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.brandContainer}>
+          <Text style={styles.brand}>Suq l-Filaha</Text>
+          <Image source={require('../assets/logo.png')} style={styles.logo} />
+        </View>
+        <TouchableOpacity onPress={() => navigation.navigate('ProfileScreen')}>
+          <Feather name="user" size={22} color="#111" />
+        </TouchableOpacity>
+      </View>
+
+      {/* User greeting */}
+<View style={styles.greetingContainer}>
+    <Text style={styles.greetingText}>Ahlan wa Sahlan,</Text>
+    <Text style={styles.userName}> {user?.name}</Text>
+</View>
+      {/* Search */}
+      <View style={styles.searchWrap}>
+        <Feather name="search" size={20} color="#777" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search wholesale grains, fruits…"
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
+
+      {/* Featured Harvests */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Featured Harvests</Text>
+          <TouchableOpacity
+                onPress={() => navigation.navigate('Products')}
+
+          >
+            <Text style={styles.viewAll}>View all</Text>
+          </TouchableOpacity>
+        </View>
+        <FlatList
+          data={featured}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(i) => i.id}
+          renderItem={renderHarvest}
+          contentContainerStyle={{ paddingLeft: 20, paddingRight: 8,
+                  paddingBottom: 20 // Add this line for bottom padding
+           }}
+          ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+        />
+      </View>
+
+      {/* Categories */}
+      <View style={styles.section}>
+<Text style={[styles.sectionTitle, { paddingHorizontal: 20, marginBottom: 12 }]}>
+    Categories
+  </Text>        <View style={styles.pills}>
+          {categories.map((c) => (
+            <TouchableOpacity key={c.id} style={styles.pill}>
+              <Text style={styles.pillEmoji}>{c.icon}</Text>
+              <Text style={styles.pillLabel}>{c.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Top Rated Farmers */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Top Rated Farmers</Text>
+          <TouchableOpacity>
+            <Text style={styles.viewAll}>Show Map</Text>
+          </TouchableOpacity>
+        </View>
+        {farmers.map(renderFarmer)}
+      </View>
+    </ScrollView>
+  );
 }
 
-const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
-    const { user, logout } = useAuthStore();
-
-    const handleLogout = async () => {
-        await logout();
-        navigation.replace('PhoneInput');
-    };
-
-    return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Welcome to Suq l-Filaha!</Text>
-                <Text style={styles.subtitle}>
-                    {user?.userType === 'FARMER' ? '🌾 Farmer' : '🛒 Buyer'} Dashboard
-                </Text>
-            </View>
-
-            <View style={styles.profileCard}>
-                <Text style={styles.label}>Name</Text>
-                <Text style={styles.value}>{user?.name}</Text>
-
-                <Text style={styles.label}>Phone Number</Text>
-                <Text style={styles.value}>{user?.phoneNumber}</Text>
-
-                <Text style={styles.label}>User Type</Text>
-                <Text style={styles.value}>{user?.userType}</Text>
-
-                {user?.location && (
-                    <>
-                        <Text style={styles.label}>Location</Text>
-                        <Text style={styles.value}>{user.location}</Text>
-                    </>
-                )}
-
-                <Text style={styles.label}>Rating</Text>
-                <Text style={styles.value}>⭐ {user?.rating.toFixed(1)}</Text>
-            </View>
-
-            <TouchableOpacity
-                style={styles.profileButton}
-                onPress={() => navigation.navigate('Profile')}
-            >
-                <Text style={styles.profileButtonText}>View My Profile</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutButtonText}>Logout</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.footer}>
-                This is a placeholder home screen.{'\n'}
-                Your main app features will go here.
-            </Text>
-        </View>
-    );
-};
-
+/* -------------  STYLES  ------------- */
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-        padding: 24,
-    },
-    header: {
-        marginTop: 48,
-        marginBottom: 32,
-        alignItems: 'center',
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#1a1a1a',
-        marginBottom: 8,
-    },
-    subtitle: {
-        fontSize: 18,
-        color: '#489163',
-        fontWeight: '600',
-    },
-    profileCard: {
-        backgroundColor: '#f5f5f5',
-        borderRadius: 16,
-        padding: 24,
-        gap: 12,
-        marginBottom: 24,
-    },
-    label: {
-        fontSize: 12,
-        color: '#666',
-        fontWeight: '600',
-        textTransform: 'uppercase',
-        marginTop: 8,
-    },
-    value: {
-        fontSize: 16,
-        color: '#1a1a1a',
-        fontWeight: '500',
-    },
-    profileButton: {
-        backgroundColor: '#489163',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    profileButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    logoutButton: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#ef4444',
-    },
-    logoutButtonText: {
-        color: '#ef4444',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    footer: {
-        marginTop: 24,
-        textAlign: 'center',
-        fontSize: 14,
-        color: '#999',
-        lineHeight: 20,
-    },
+  container: { flex: 1, backgroundColor: '#fff' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginTop: 56,
+    marginBottom: 12,
+  },
+  brandContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  brand: { fontSize: 22, fontWeight: '700', color: '#111' },
+  logo: { width: 30, height: 30 },
+// greeting: {
+//     fontSize: 26,
+//     fontWeight: '600',
+//     color: '#111',
+//     marginHorizontal: 20,
+//     marginBottom: 16,
+//     flexWrap: 'wrap', // Allow text to wrap to next line if too long
+// },
+greetingContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap', // This allows wrapping to next line if name is too long
+    marginHorizontal: 20,
+    marginBottom: 16,
+    alignItems: 'flex-start', // Align text baseline
+},
+greetingText: {
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#111',
+},
+userName: {
+    fontSize: 26,
+    fontWeight: '600',
+    color: '#489163', // Different color for the name
+    flexShrink: 1, // Allow name to shrink if needed
+},
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f3f3',
+    marginHorizontal: 20,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    height: 48,
+    marginBottom: 24,
+  },
+  searchInput: { flex: 1, marginLeft: 8, fontSize: 16 },
+  section: { marginBottom: 28 },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: '#111' },
+  viewAll: { fontSize: 15, fontWeight: '600', color: '#489163' },
+  harvestCard: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  harvestImage: { width: '100%', height: 140 },
+  harvestBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: '#2d5016',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  badgeTxt: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  harvestInfo: { padding: 14 },
+  harvestName: { fontSize: 17, fontWeight: '600', color: '#111' },
+  harvestPrice: { fontSize: 15, fontWeight: '600', color: '#489163', marginTop: 4 },
+  pills: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: 20, gap: 10 },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f1e8',
+    borderRadius: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  pillEmoji: { fontSize: 20, marginRight: 6 },
+  pillLabel: { fontSize: 15, fontWeight: '600', color: '#333' },
+  farmerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  farmerAvatar: { width: 52, height: 52, borderRadius: 26, marginRight: 12 },
+  farmerInfo: { flex: 1 },
+  farmerName: { fontSize: 16, fontWeight: '600', color: '#111' },
+  farmerCrop: { fontSize: 14, color: '#555', marginTop: 2 },
+  farmerStars: { fontSize: 13, color: '#f59e0b', marginTop: 4 },
+  contactBtn: {
+    backgroundColor: '#eef5f0',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  contactBtnTxt: { color: '#489163', fontWeight: '600' },
 });
-
-export default HomeScreen;

@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { useAuthStore } from '../store/authStore';
+import { ProductFilter } from '../types';
 
 // Update this to your backend URL
 const API_BASE_URL = 'https://macbook.euplectes-rockhopper.ts.net/api';
@@ -95,6 +96,40 @@ class ApiClient {
 
     async getUserReviews(userId: string) {
         const response = await this.client.get(`/users/${userId}/reviews`);
+        return response.data;
+    }
+
+    // Product endpoints
+    async getProducts(params?: ProductFilter) {
+        const response = await this.client.get('/products', { params });
+        return response.data;
+    }
+
+    async getProduct(id: string) {
+        const response = await this.client.get(`/products/${id}`);
+        return response.data;
+    }
+
+    // Order endpoints
+    async createOrder(data: {
+        farmerId: string;
+        items: { productId: string; quantity: number }[];
+    }) {
+        const response = await this.client.post('/orders', data);
+        return response.data;
+    }
+
+    async getOrders() {
+        const response = await this.client.get('/orders');
+        return response.data;
+    }
+
+    async getOrder(id: string) {
+        const response = await this.client.get(`/orders/${id}`);
+        return response.data;
+    }
+    async getFarmers() {
+        const response = await this.client.get(`/farmers}`);
         return response.data;
     }
 }
