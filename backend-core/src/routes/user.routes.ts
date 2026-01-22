@@ -9,6 +9,8 @@ const userController = new UserController();
 const upload = multer({ storage });
 
 // Public routes
+ router.get('/farmers', authenticate, userController.getFarmers);
+
 router.get('/:userId', userController.getUserById);
 router.get('/:userId/reviews', userController.getReviews);
 

@@ -23,7 +23,7 @@ export interface OrderItem {
 }
 export interface Farmer{
     id?:string
-    avatar?:string
+    profileInfo?:string
     name?:string
     mainCrop?:string
     orderCount?:string
@@ -47,6 +47,6 @@ export interface CartItem extends Product {
 export interface ProductFilter {
     category?: string;
     search?: string;
-    minPrice?: number;
-    maxPrice?: number;
+    farmerId?: string;
+    isAvailable?: boolean;
 }

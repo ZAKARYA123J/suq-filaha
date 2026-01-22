@@ -5,13 +5,15 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon --exec tsx index.ts",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "seed": "ts-node prisma/seed.cts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "argon2": "^0.44.0",
     "axios": "^1.13.2",
+    "bcrypt": "^6.0.0",
     "cloudinary": "^2.9.0",
     "cookie": "^1.1.1",
     "cors": "^2.8.5",
@@ -40,6 +42,7 @@
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
+    "ts-node-esm": "^0.0.6",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

@@ -5,7 +5,8 @@ defmodule RealtimeGatewayWeb.UserSocket do
 
   # Channels
   channel "chat:*", RealtimeGatewayWeb.ChatChannel
-
+transport :websocket, Phoenix.Transports.WebSocket,
+    timeout: 600_000  # 10 minutes
   # Connect function - authenticate users here
   def connect(%{"token" => token}, socket, _connect_info) do
     # Verify user token

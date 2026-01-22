@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -22,7 +22,7 @@ import CartScreen from './screens/CartScreen';
 import ChatScreen from './screens/ChatScreen';
 import OrdersScreen from './screens/OrdersScreen';
 import { useAuthStore } from './store/authStore';
-
+import { StatusBar } from 'react-native';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -69,7 +69,6 @@ function MainTabs() {
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          // marginBottom: 7,
         },
         tabBarHideOnKeyboard: false,
       })}
@@ -95,15 +94,10 @@ function MainTabs() {
         options={{ tabBarLabel: 'Chat' }}
       />
       <Tab.Screen 
-        name="CartTab" 
-        component={CartScreen}
-        options={{ tabBarLabel: 'Cart' }}
-      />
-      {/* <Tab.Screen 
-        name="ProfileTab" 
-        component={ProfileScreen}
+  name="ProfileTab" 
+  component={ProfileScreen}  // Use the ProfileScreen instead of CartScreen
         options={{ tabBarLabel: 'Profile' }}
-      /> */}
+      />
     </Tab.Navigator>
   );
 }
@@ -111,11 +105,38 @@ function MainTabs() {
 function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(true);
-  const { isAuthenticated, isLoading, loadAuth } = useAuthStore();
+  const [authError, setAuthError] = useState(false);
+  const { isAuthenticated, isLoading, loadAuth, clearAuth, checkAuthValidity } = useAuthStore();
 
   useEffect(() => {
-    loadAuth();
-  }, [loadAuth]);
+    const initializeAuth = async () => {
+      try {
+        await loadAuth();
+        
+        // Check if the authentication is still valid (e.g., token not expired)
+        if (isAuthenticated) {
+          const isValid = await checkAuthValidity();
+          if (!isValid) {
+            setAuthError(true);
+            // Optionally clear invalid auth data
+            await clearAuth();
+          }
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        setAuthError(true);
+        await clearAuth();
+      }
+    };
+
+    initializeAuth();
+  }, [loadAuth, checkAuthValidity, clearAuth]);
+
+  // Handle authentication errors in protected screens
+  const handleAuthError = () => {
+    setAuthError(true);
+    clearAuth();
+  };
 
   const handleSplashComplete = () => {
     setShowSplash(false);
@@ -139,13 +160,18 @@ function App() {
 
   return (
     <SafeAreaProvider>
+        <StatusBar
+    barStyle="light-content"
+    backgroundColor="#000"  
+        translucent={false}   
+  />
       <NavigationContainer>
         <Stack.Navigator
           screenOptions={{
             headerShown: false,
           }}
         >
-          {!isAuthenticated ? (
+          {!isAuthenticated || authError ? (
             <>
               {showOnboarding && (
                 <Stack.Screen name="Onboarding">
@@ -170,13 +196,16 @@ function App() {
                 name="CreatePassword"
                 component={CreatePasswordScreen}
               />
-                            <Stack.Screen name="Products" component={ProductsScreen} />
-
+              <Stack.Screen name="Products" component={ProductsScreen} />
               <Stack.Screen name="Login" component={LoginScreen} />
             </>
           ) : (
             <>
-              <Stack.Screen name="Main" component={MainTabs} />
+              <Stack.Screen name="Main">
+                {(props) => <MainTabs {...props} 
+                onAuthError={handleAuthError}
+                />}
+              </Stack.Screen>
               <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
               <Stack.Screen name="EditProfile" component={EditProfileScreen} />
               <Stack.Screen name="ProfileScreen" component={ProfileScreen} />

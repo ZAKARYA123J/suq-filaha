@@ -28,7 +28,7 @@ const categories = [
 ];
 
 export default function HomeScreen({ navigation }: any) {
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const [featured, setFeatured] = useState<Product[]>([]);
   const [farmers, setFarmers] = useState<Farmer[]>([]);
   const [search, setSearch] = useState('');
@@ -67,7 +67,7 @@ export default function HomeScreen({ navigation }: any) {
 
   const renderFarmer = (f: Farmer) => (
     <View key={f.id} style={styles.farmerRow}>
-      <Image source={{ uri: f.avatar }} style={styles.farmerAvatar} />
+      <Image source={{ uri: f.profileInfo }} style={styles.farmerAvatar} />
       <View style={styles.farmerInfo}>
         <Text style={styles.farmerName}>{f.name}</Text>
         <Text style={styles.farmerCrop}>Main crop: {f.mainCrop}</Text>
@@ -81,6 +81,7 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.brandContainer}>
@@ -126,7 +127,7 @@ export default function HomeScreen({ navigation }: any) {
           keyExtractor={(i) => i.id}
           renderItem={renderHarvest}
           contentContainerStyle={{ paddingLeft: 20, paddingRight: 8,
-                  paddingBottom: 20 // Add this line for bottom padding
+                  paddingBottom: 20 
            }}
           ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
         />
@@ -162,11 +163,15 @@ export default function HomeScreen({ navigation }: any) {
 
 /* -------------  STYLES  ------------- */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#fff',  marginBottom: 40,
+     // space for tab bar
+     // 
+      },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    
     paddingHorizontal: 20,
     marginTop: 56,
     marginBottom: 12,

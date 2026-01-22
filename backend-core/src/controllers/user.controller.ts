@@ -22,6 +22,23 @@ export class UserController {
       res.status(400).json({ error: error.message });
     }
   }
+  async getFarmers(_req: AuthRequest, res: Response) {
+    try {
+      // const userId = req.user?.userId;
+      // if (!userId) {
+      //   return res.status(401).json({ error: 'Unauthorized' });
+      // }
+
+      const user = await userService.getFarmers();
+      // if (!user) {
+      //   return res.status(404).json({ error: 'User not found' });
+      // }
+
+      res.json(user);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
 
   async getUserById(req: AuthRequest, res: Response) {
     try {

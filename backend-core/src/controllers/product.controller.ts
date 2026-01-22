@@ -1,13 +1,25 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/auth.middleware';
 import { ProductService } from '../services/product.service';
-
 const productService = new ProductService();
 
 export class ProductController {
   async create(req: AuthRequest, res: Response) {
     try {
-      const product = await productService.createProduct(req.user!.userId, req.body);
+  const farmerId = req.user?.userId as string;
+  const files = req.files as Express.Multer.File[];
+
+  const imageUrls = files?.map(file => file.path) || [];
+
+  const product = await productService.createProduct(farmerId, {
+    ...req.body,
+    images: imageUrls,
+    quantity: Number(req.body.quantity),
+price: Number(req.body.price),
+harvestDate: req.body.harvestDate
+  ? new Date(req.body.harvestDate)
+  : null,
+  });
       res.status(201).json(product);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

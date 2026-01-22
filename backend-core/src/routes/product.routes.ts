@@ -3,6 +3,7 @@ import { ProductController } from '../controllers/product.controller';
 import { authenticate, authorize } from '../middlewares/auth.middleware';
 import { validate } from '../middlewares/validation.middleware';
 import { createProductSchema, updateProductSchema } from '../validators/product.validator';
+import { uploadProductImages } from '../services/product.service';
 
 const router = Router();
 const productController = new ProductController();
@@ -12,7 +13,8 @@ router.post(
   '/',
   authenticate,
   authorize('FARMER'),
-  validate(createProductSchema),
+  uploadProductImages,
+  // validate(createProductSchema),
   productController.create
 );
 

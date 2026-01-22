@@ -129,7 +129,7 @@ class ApiClient {
         return response.data;
     }
     async getFarmers() {
-        const response = await this.client.get(`/farmers}`);
+        const response = await this.client.get(`/users/farmers`);
         return response.data;
     }
 }

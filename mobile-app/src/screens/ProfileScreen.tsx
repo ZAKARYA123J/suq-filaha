@@ -8,15 +8,18 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     RefreshControl,
+    Alert,
 } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import { apiClient, getErrorMessage } from '../services/api';
-// import { SafeAreaFrameContext } from 'react-native-safe-area-context';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Feather';
+
 const ProfileScreen = ({ navigation }: any) => {
-    const { user, setUser } = useAuthStore();
+    const { user, setUser, logout } = useAuthStore();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
     const [reviews, setReviews] = useState([]);
 
     const fetchProfileData = async () => {
@@ -46,6 +49,35 @@ const ProfileScreen = ({ navigation }: any) => {
         fetchProfileData();
     };
 
+    const handleLogout = () => {
+        Alert.alert(
+            'Logout',
+            'Are you sure you want to logout?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Logout',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setLoggingOut(true);
+                            await logout();
+                        } catch (error) {
+                            console.error('Logout error:', error);
+                            Alert.alert('Error', 'Failed to logout. Please try again.');
+                        } finally {
+                            setLoggingOut(false);
+                        }
+                    },
+                },
+            ],
+            { cancelable: true }
+        );
+    };
+
     if (loading && !refreshing) {
         return (
             <View style={styles.centerContainer}>
@@ -54,40 +86,35 @@ const ProfileScreen = ({ navigation }: any) => {
         );
     }
 
-    // const renderReviewItem = ({ item }: any) => (
-    //     <View style={styles.reviewCard}>
-    //         <View style={styles.reviewHeader}>
-    //             <Text style={styles.reviewerName}>{item.reviewer?.name}</Text>
-    //             <Text style={styles.ratingText}>★ {item.rating}</Text>
-    //         </View>
-    //         <Text style={styles.reviewComment}>{item.comment}</Text>
-    //         <Text style={styles.reviewDate}>
-    //             {new Date(item.createdAt).toLocaleDateString()}
-    //         </Text>
-    //     </View>
-    // );
-
     return (
         <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            refreshControl={
-                <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                    colors={['#489163']}
-                    tintColor="#489163"
-                />
-            }
-        >
-     
+            {/* Header with Back Button and Title */}
+            <View style={styles.headerContainer}>
+                <TouchableOpacity 
+                    onPress={() => navigation.goBack()} 
+                    style={styles.backButton}
+                >
+                    <Icon name="arrow-left" size={24} color="#111827" />
+                </TouchableOpacity>
+                
+                <Text style={styles.screenTitle}>My Profile</Text>
+                
+                {/* Empty View to balance the layout */}
+                <View style={styles.rightPlaceholder} />
+            </View>
+
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#489163']} tintColor="#489163" />
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#489163']}
+                        tintColor="#489163"
+                    />
                 }
             >
-                <View style={styles.header}>
+                <View style={styles.profileHeader}>
                     <TouchableOpacity
                         style={styles.avatarContainer}
                         onPress={() => navigation.navigate('EditProfile')}
@@ -147,22 +174,33 @@ const ProfileScreen = ({ navigation }: any) => {
                     )}
                 </View>
 
-                <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() => navigation.navigate('EditProfile')}
-                >
-                    <Text style={styles.editButtonText}>Edit Profile</Text>
-                </TouchableOpacity>
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => navigation.navigate('EditProfile')}
+                    >
+                        <Text style={styles.editButtonText}>Edit Profile</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.logoutButton}
+                        onPress={handleLogout}
+                        disabled={loggingOut}
+                    >
+                        {loggingOut ? (
+                            <ActivityIndicator size="small" color="#dc2626" />
+                        ) : (
+                            <Text style={styles.logoutButtonText}>Logout</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
-            </ScrollView>
-    
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-   
-      safeArea: {
+    safeArea: {
         flex: 1,
         backgroundColor: '#f9fafb',
     },
@@ -175,8 +213,35 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#fff',
     },
- 
-    header: {
+    // Header Container with Back Button and Title
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#f3f4f6',
+    },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#f3f4f6',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    screenTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#111827',
+        textAlign: 'center',
+    },
+    rightPlaceholder: {
+        width: 40, // Same as back button width for balance
+    },
+    profileHeader: {
         alignItems: 'center',
         paddingVertical: 30,
         backgroundColor: '#fff',
@@ -299,8 +364,12 @@ const styles = StyleSheet.create({
         color: '#9ca3af',
         marginTop: 20,
     },
+    buttonContainer: {
+        marginHorizontal: 16,
+        marginTop: 16,
+        gap: 12,
+    },
     editButton: {
-        margin: 16,
         backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: '#489163',
@@ -310,6 +379,19 @@ const styles = StyleSheet.create({
     },
     editButtonText: {
         color: '#489163',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    logoutButton: {
+        backgroundColor: '#fff',
+        borderWidth: 1,
+        borderColor: '#dc2626',
+        paddingVertical: 12,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    logoutButtonText: {
+        color: '#dc2626',
         fontWeight: 'bold',
         fontSize: 16,
     },

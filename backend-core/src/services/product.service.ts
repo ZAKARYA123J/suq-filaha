@@ -1,26 +1,35 @@
 import prisma from '../config/database';
 import { CreateProductInput, UpdateProductInput } from '../validators/product.validator';
+import multer from 'multer';
+import { storage } from '../config/cloudinary';
 
+export const uploadProductImages = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB per image
+  },
+}).array('images', 5);
 export class ProductService {
-  async createProduct(farmerId: string, data: CreateProductInput) {
-    return await prisma.product.create({
-      data: {
-        ...data,
-        farmerId,
-        images: data.images || [],
-      },
-      include: {
-        farmer: {
-          select: {
-            id: true,
-            name: true,
-            location: true,
-            rating: true,
-          },
+async createProduct(farmerId: string, data: CreateProductInput) {
+  return await prisma.product.create({
+    data: {
+      ...data,
+      farmerId,
+      images: data.images || [],
+    },
+    include: {
+      farmer: {
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          rating: true,
         },
       },
-    });
-  }
+    },
+  });
+}
+
 
   async getProducts(filters?: {
     category?: string;

@@ -210,7 +210,7 @@ export default function ProductDetailScreen({ route }: any) {
               </Text>
             </TouchableOpacity>
             
-            <TouchableOpacity 
+            {/* <TouchableOpacity 
               style={orderButtonStyle}
               disabled={!item.isAvailable}
               onPress={() => {
@@ -223,7 +223,7 @@ export default function ProductDetailScreen({ route }: any) {
               <Text style={orderButtonTextStyle}>
                 {item.isAvailable ? 'Place Order' : 'Out of Stock'}
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           {/* Additional Info */}
