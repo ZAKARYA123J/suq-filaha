@@ -19,6 +19,8 @@ export type RootStackParamList = {
   ProductDetail: { productId: string };
   Chat: { chatId: string };
   ChatList: undefined;
+  NegotiationChat: { negotiationId: string };
+  NegotiationHistory: undefined;
 };
 
 export type ChatStackParamList = {

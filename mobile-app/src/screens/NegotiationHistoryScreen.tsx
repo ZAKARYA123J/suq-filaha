@@ -3,87 +3,87 @@ import {
   ActivityIndicator,
   FlatList,
   Image,
+  Platform,
+  Pressable,
   RefreshControl,
   SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  Platform,
-  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { SearchBar } from '@rneui/themed';
 
 import { useAuthStore } from '../store/authStore';
-import { ChatListItem, useChatStore } from '../store/chatStore';
+import { Negotiation } from '../store/negotiationStore';
+import { apiClient, getErrorMessage } from '../services/api';
 
-export default function ChatListScreen() {
+export default function NegotiationHistoryScreen() {
   const navigation = useNavigation<any>();
   const { user } = useAuthStore();
-  const { loadChats } = useChatStore();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [chats, setChats] = useState<ChatListItem[]>([]);
-  const [search, setSearch] = useState(''); 
+  const [negotiations, setNegotiations] = useState<Negotiation[]>([]);
 
-  const fetchChats = useCallback(async () => {
+  const fetchNegotiations = useCallback(async () => {
     try {
       setError(null);
-      const data = await loadChats();
-      setChats(Array.isArray(data) ? data : []);
+      const data = await apiClient.getNegotiations();
+      setNegotiations(Array.isArray(data) ? data : []);
     } catch (e: any) {
-      setError(e?.response?.data?.error || e?.message || 'Failed to load chats');
+      setError(getErrorMessage(e));
     }
-  }, [loadChats]);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       if (!mounted) return;
       setLoading(true);
-      await fetchChats();
+      await fetchNegotiations();
       if (!mounted) return;
       setLoading(false);
     })();
+
     return () => {
       mounted = false;
     };
-  }, [fetchChats]);
+  }, [fetchNegotiations]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchChats();
+    await fetchNegotiations();
     setRefreshing(false);
-  }, [fetchChats]);
+  }, [fetchNegotiations]);
 
-  const filteredChats = useMemo(() => {
-    if (!search.trim()) return chats;
-    return chats.filter(chat => {
-      const otherUser = user && chat.user1Id === user.id ? chat.user2 : chat.user1;
-      return otherUser?.name?.toLowerCase().includes(search.toLowerCase()) ||
-             chat.lastMessage?.toLowerCase().includes(search.toLowerCase());
-    });
-  }, [chats, search, user]);
+  const sortedNegotiations = useMemo(() => {
+    return [...negotiations].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
+  }, [negotiations]);
 
   const renderItem = useCallback(
-    ({ item }: { item: ChatListItem }) => {
+    ({ item }: { item: Negotiation }) => {
       const otherUser =
-        user && item.user1Id === user.id ? item.user2 : item.user1;
+        user && item.buyerId === user.id ? item.farmer : item.buyer;
+
+      const productName = item.product?.name || 'Product';
+      const subtitle = `${item.status} · Original: $${item.originalPrice} · Proposed: $${item.proposedPrice}`;
 
       return (
         <TouchableOpacity
           style={styles.row}
-          onPress={() => navigation.navigate('Chat', { chatId: item.id })}
+          onPress={() => navigation.navigate('NegotiationChat', { negotiationId: item.id })}
         >
           {otherUser?.profileInfo ? (
             <Image source={{ uri: otherUser.profileInfo }} style={styles.avatar} />
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarLetter}>
-                {(otherUser?.name || 'C').charAt(0).toUpperCase()}
+                {(otherUser?.name || 'N').charAt(0).toUpperCase()}
               </Text>
             </View>
           )}
@@ -91,17 +91,15 @@ export default function ChatListScreen() {
           <View style={styles.content}>
             <View style={styles.topRow}>
               <Text style={styles.name} numberOfLines={1}>
-                {otherUser?.name || 'Chat'}
+                {productName}
               </Text>
               <Text style={styles.time} numberOfLines={1}>
-                {item.lastMessageTime
-                  ? new Date(item.lastMessageTime).toLocaleDateString()
-                  : ''}
+                {item.updatedAt ? new Date(item.updatedAt).toLocaleDateString() : ''}
               </Text>
             </View>
 
-            <Text style={styles.preview} numberOfLines={1}>
-              {item.lastMessage || 'No messages yet'}
+            <Text style={styles.preview} numberOfLines={2}>
+              {otherUser?.name ? `${otherUser.name} · ${subtitle}` : subtitle}
             </Text>
           </View>
         </TouchableOpacity>
@@ -110,57 +108,29 @@ export default function ChatListScreen() {
     [navigation, user]
   );
 
-  const keyExtractor = useCallback((item: ChatListItem) => item.id, []);
+  const keyExtractor = useCallback((item: Negotiation) => item.id, []);
 
   const emptyText = useMemo(() => {
     if (loading) return '';
     if (error) return error;
-    return 'No chats yet.';
+    return 'No negotiations yet.';
   }, [error, loading]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Header with Title */}
+
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Chats</Text>
-
-        <TouchableOpacity
-          style={styles.headerAction}
-          onPress={() => navigation.navigate('NegotiationHistory')}
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={10}
+          style={styles.backButton}
         >
-          <Text style={styles.headerActionText}>Negotiations</Text>
-        </TouchableOpacity>
+          <Text style={styles.backLabel}>‹</Text>
+        </Pressable>
+        <Text style={styles.headerTitle}>Negotiations</Text>
       </View>
 
-      {/* Search Bar */}
-      <SearchBar
-        placeholder="Search buyers and farmers"
-        value={search}
-        onChangeText={setSearch}
-        platform={Platform.OS === 'ios' ? 'ios' : 'android'}
-        containerStyle={styles.searchContainer}
-        inputContainerStyle={styles.searchInputContainer}
-        inputStyle={styles.searchInput}
-        lightTheme
-        round
-      />
-
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity style={[styles.tab, styles.activeTab]}>
-          <Text style={[styles.tabText, styles.activeTabText]}>All</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab}>
-          <Text style={styles.tabText}>Unread</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tab}>
-          <Text style={styles.tabText}>Completed</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Chat List */}
       <View style={styles.listContainer}>
         {loading ? (
           <View style={styles.center}>
@@ -168,7 +138,7 @@ export default function ChatListScreen() {
           </View>
         ) : (
           <FlatList
-            data={filteredChats}
+            data={sortedNegotiations}
             keyExtractor={keyExtractor}
             renderItem={renderItem}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -177,7 +147,7 @@ export default function ChatListScreen() {
                 <Text style={styles.empty}>{emptyText}</Text>
               </View>
             }
-            contentContainerStyle={filteredChats.length === 0 ? styles.emptyContainer : undefined}
+            contentContainerStyle={sortedNegotiations.length === 0 ? styles.emptyContainer : undefined}
           />
         )}
       </View>
@@ -192,65 +162,26 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    backgroundColor: '#FFF',
+  },
+  backButton: {
+    paddingRight: 12,
+  },
+  backLabel: {
+    fontSize: 28,
+    color: '#489163',
+    lineHeight: 28,
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: '700',
     color: '#212121',
-  },
-  headerAction: {
-    marginLeft: 'auto',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#489163',
-    borderRadius: 16,
-  },
-  headerActionText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  searchContainer: {
-    backgroundColor: 'transparent',
-    borderTopWidth: 0,
-    borderBottomWidth: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  searchInputContainer: {
-    backgroundColor: '#F5F5F5',
-    height: 40,
-  },
-  searchInput: {
-    fontSize: 14,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  tab: {
-    marginRight: 24,
-    paddingBottom: 8,
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#489163',
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#757575',
-    fontWeight: '500',
-  },
-  activeTabText: {
-    color: '#489163',
-    fontWeight: '600',
   },
   listContainer: {
     flex: 1,

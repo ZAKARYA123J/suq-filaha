@@ -178,6 +178,10 @@ mix test
 2. **Messages Not Delivering**: Verify backend API is accessible
 3. **Typing Not Working**: Check presence tracking configuration
 4. **Offline Messages Lost**: Verify AsyncStorage permissions
+5. **Presence / Offline Queue Crashes**:
+   - Ensure Presence tracking uses the channel pid (not the full socket struct)
+   - `Phoenix.Presence.list/1` returns a map of presences; code should not expect `{:ok, presences}`
+   - If `OfflineMessageQueue` is crashing, it is often caused by a pattern-match failure when reading presence state
 
 ### Debug Mode
 

@@ -22,11 +22,14 @@ import CartScreen from './screens/CartScreen';
 import ChatScreen from './screens/ChatScreen';
 import OrdersScreen from './screens/OrdersScreen';
 import NegotiationChatScreen from './screens/NegotiationChatScreen';
+import NegotiationHistoryScreen from './screens/NegotiationHistoryScreen';
 import { useAuthStore } from './store/authStore';
 import { StatusBar } from 'react-native';
+import ChatListScreen from './screens/ChatListScreen';
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-import ChatListScreen from './screens/ChatListScreen';
+
 // Create a Tab Navigator for the main app screens
 function MainTabs() {
   return (
@@ -81,11 +84,11 @@ function MainTabs() {
         component={ProductsScreen}
         options={{ tabBarLabel: 'Products' }}
       />
-      <Tab.Screen 
+      {/* <Tab.Screen 
         name="OrdersTab" 
         component={OrdersScreen}
         options={{ tabBarLabel: 'Orders' }}
-      />
+      /> */}
       <Tab.Screen 
         name="ChatTab" 
         component={ChatListScreen}  // Changed to ChatListScreen
@@ -206,6 +209,7 @@ function App() {
         {/* Remove ChatList - it's in MainTabs as ChatTab */}
         <Stack.Screen name="Chat" component={ChatScreen as any} />
         <Stack.Screen name="NegotiationChat" component={NegotiationChatScreen as any} />
+        <Stack.Screen name="NegotiationHistory" component={NegotiationHistoryScreen as any} />
         {/* Add CartScreen if needed */}
         <Stack.Screen name="Cart" component={CartScreen} />
       </>
