@@ -13,6 +13,7 @@ defmodule RealtimeGatewayWeb.Presence do
   """
   def track_user(socket, negotiation_id, user_metadata \\ %{}) do
     user_id = socket.assigns.userId
+    pid = socket.channel_pid || self()
     default_metadata = %{
       userId: user_id,
       name: socket.assigns.name,
@@ -22,7 +23,7 @@ defmodule RealtimeGatewayWeb.Presence do
     
     metadata = Map.merge(default_metadata, user_metadata)
     
-    case track(socket, "negotiation:#{negotiation_id}", user_id, metadata) do
+    case track(pid, "negotiation:#{negotiation_id}", user_id, metadata) do
       {:ok, _} ->
         Logger.info("User #{user_id} tracked in negotiation #{negotiation_id}")
         :ok
@@ -37,8 +38,14 @@ defmodule RealtimeGatewayWeb.Presence do
   """
   def untrack_user(socket, negotiation_id) do
     user_id = socket.assigns.userId
-    untrack(socket, "negotiation:#{negotiation_id}", user_id)
-    Logger.info("User #{user_id} untracked from negotiation #{negotiation_id}")
+    pid = socket.channel_pid || self()
+
+    if is_binary(negotiation_id) and negotiation_id != "" do
+      untrack(pid, "negotiation:#{negotiation_id}", user_id)
+      Logger.info("User #{user_id} untracked from negotiation #{negotiation_id}")
+    else
+      Logger.warning("Skipping untrack for user #{user_id}: missing negotiation_id")
+    end
   end
 
   @doc """
@@ -46,18 +53,37 @@ defmodule RealtimeGatewayWeb.Presence do
   """
   def get_online_users(negotiation_id) do
     case list("negotiation:#{negotiation_id}") do
-      {:ok, presences} ->
-        users = Enum.map(presences, fn {user_id, %{metas: [meta | _]}} ->
-          %{
-            userId: user_id,
-            name: meta.name,
-            phoneNumber: meta.phoneNumber,
-            onlineAt: meta.onlineAt
-          }
-        end)
+      presences when is_map(presences) ->
+        users =
+          Enum.map(presences, fn {user_id, %{metas: [meta | _]}} ->
+            %{
+              userId: user_id,
+              name: meta.name,
+              phoneNumber: meta.phoneNumber,
+              onlineAt: meta.onlineAt
+            }
+          end)
+
         {:ok, users}
+
+      {:ok, presences} when is_map(presences) ->
+        users =
+          Enum.map(presences, fn {user_id, %{metas: [meta | _]}} ->
+            %{
+              userId: user_id,
+              name: meta.name,
+              phoneNumber: meta.phoneNumber,
+              onlineAt: meta.onlineAt
+            }
+          end)
+
+        {:ok, users}
+
       {:error, reason} ->
         {:error, reason}
+
+      other ->
+        {:error, {:unexpected_presence_list, other}}
     end
   end
 

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { phoenixService, NegotiationMessage } from '../services/phoenix';
 import { useAuthStore } from '../store/authStore';
+import { apiClient } from '../services/api';
 
 export interface Negotiation {
   id: string;
@@ -57,6 +58,8 @@ export const useNegotiationStore = create<NegotiationStore>()(
       set({ loading: true, error: null });
 
       try {
+        await get().loadNegotiation(negotiationId);
+
         const success = await phoenixService.joinNegotiationChannel(negotiationId, {
           onPreviousMessages: (messages) => {
             set({ messages: messages.sort((a, b) => 
@@ -143,8 +146,16 @@ export const useNegotiationStore = create<NegotiationStore>()(
       const success = phoenixService.sendMessage(content);
       if (!success) {
         set({ error: 'Failed to send message - not connected' });
+        return false;
       }
-      return success;
+
+      // Persist via REST (best-effort). Phoenix handles delivery.
+      const { currentNegotiation } = get();
+      if (currentNegotiation?.id) {
+        apiClient.sendNegotiationMessage(currentNegotiation.id, content).catch(() => undefined);
+      }
+
+      return true;
     },
 
     sendTyping: (typing: boolean) => {
@@ -156,17 +167,30 @@ export const useNegotiationStore = create<NegotiationStore>()(
       const success = phoenixService.endNegotiation(status);
       if (!success) {
         set({ error: 'Failed to end negotiation - not connected' });
+        return false;
       }
+
+      // Persist status via REST (best-effort)
+      const { currentNegotiation } = get();
+      if (currentNegotiation?.id) {
+        apiClient.updateNegotiationStatus(currentNegotiation.id, status).catch(() => undefined);
+      }
+
       return success;
     },
 
-    loadNegotiation: async (_negotiationId: string) => {
+    loadNegotiation: async (negotiationId: string) => {
       set({ loading: true, error: null });
 
       try {
-        // For now, we'll skip loading negotiation via API since it's not implemented
-        // In a real implementation, you would call the API here
-        set({ loading: false });
+        const negotiation = await apiClient.getNegotiation(negotiationId);
+        const messages = await apiClient.getNegotiationMessages(negotiationId);
+
+        set({
+          currentNegotiation: negotiation,
+          messages: Array.isArray(messages) ? messages : [],
+          loading: false,
+        });
       } catch (_error) {
         set({ 
           error: 'Failed to load negotiation',

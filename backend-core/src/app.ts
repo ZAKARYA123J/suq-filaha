@@ -5,6 +5,7 @@ import userRoutes from './routes/user.routes';
 import chatRoutes from './routes/chat.routes';
 import productRoutes from './routes/product.routes';
 import orderRoutes from './routes/order.routes';
+import negotiationRoutes from './routes/negotiation.routes';
 import { errorHandler } from './middlewares/error.middleware';
 
 
@@ -25,6 +26,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/negotiations', negotiationRoutes);
 
 // Health check
 app.get('/health', (_req, res) => {

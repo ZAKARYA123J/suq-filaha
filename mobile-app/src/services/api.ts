@@ -128,6 +128,44 @@ class ApiClient {
         const response = await this.client.get(`/orders/${id}`);
         return response.data;
     }
+
+    async createNegotiation(data: { productId: string; proposedPrice: number }) {
+        const response = await this.client.post('/negotiations', data);
+        return response.data;
+    }
+
+    async getNegotiations() {
+        const response = await this.client.get('/negotiations');
+        return response.data;
+    }
+
+    async getNegotiation(id: string) {
+        const response = await this.client.get(`/negotiations/${id}`);
+        return response.data;
+    }
+
+    async getNegotiationMessages(id: string) {
+        const response = await this.client.get(`/negotiations/${id}/messages`);
+        return response.data;
+    }
+
+    async sendNegotiationMessage(id: string, content: string) {
+        const response = await this.client.post(`/negotiations/${id}/messages`, { content });
+        return response.data;
+    }
+
+    async updateNegotiationStatus(
+        id: string,
+        status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED'
+    ) {
+        const response = await this.client.patch(`/negotiations/${id}/status`, { status });
+        return response.data;
+    }
+
+    async updateNegotiationProposedPrice(id: string, proposedPrice: number) {
+        const response = await this.client.patch(`/negotiations/${id}/proposed-price`, { proposedPrice });
+        return response.data;
+    }
     async getFarmers() {
         const response = await this.client.get(`/users/farmers`);
         return response.data;

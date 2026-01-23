@@ -16,6 +16,7 @@ transport :websocket, Phoenix.Transports.WebSocket,
       Logger.info("User authenticate via JWt: #{claims["userId"]}")
       socket=socket
       |> assign(:userId,claims["userId"])
+      |> assign(:token, token)
       |> assign(:name,claims["name"])
       |> assign(:phoneNumber,claims["phoneNumber"])
       {:ok,socket}

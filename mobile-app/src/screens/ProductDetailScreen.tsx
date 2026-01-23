@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, Alert, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, Alert, Dimensions, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Feather from 'react-native-vector-icons/Feather';
 import { apiClient } from '../services/api';
@@ -8,6 +8,9 @@ const { width, height } = Dimensions.get('window');
 
 export default function ProductDetailScreen({ route }: any) {
   const [item, setItem] = useState<any>(undefined);
+  const [showNegotiateModal, setShowNegotiateModal] = useState(false);
+  const [proposedPriceText, setProposedPriceText] = useState('');
+  const [creatingNegotiation, setCreatingNegotiation] = useState(false);
   const navigation = useNavigation();
   useEffect(() => {
     apiClient
@@ -209,6 +212,17 @@ export default function ProductDetailScreen({ route }: any) {
                 Message Seller
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.negotiateButton}
+              onPress={() => {
+                setProposedPriceText(String(item.price ?? ''));
+                setShowNegotiateModal(true);
+              }}
+            >
+              <Feather name="dollar-sign" size={20} color="#fff" />
+              <Text style={styles.negotiateButtonText}>Negotiate</Text>
+            </TouchableOpacity>
             
             {/* <TouchableOpacity 
               style={orderButtonStyle}
@@ -250,6 +264,71 @@ export default function ProductDetailScreen({ route }: any) {
             </View>
           )}
         </ScrollView>
+        <Modal
+          transparent
+          visible={showNegotiateModal}
+          animationType="fade"
+          onRequestClose={() => {
+            if (!creatingNegotiation) setShowNegotiateModal(false);
+          }}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Negotiate Price</Text>
+              <Text style={styles.modalSubtitle}>Enter your proposed price</Text>
+
+              <TextInput
+                value={proposedPriceText}
+                onChangeText={setProposedPriceText}
+                keyboardType="numeric"
+                placeholder="e.g. 45"
+                style={styles.modalInput}
+                editable={!creatingNegotiation}
+              />
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalCancelButton]}
+                  onPress={() => setShowNegotiateModal(false)}
+                  disabled={creatingNegotiation}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.modalConfirmButton]}
+                  onPress={async () => {
+                    const proposed = Number(proposedPriceText);
+                    if (!Number.isFinite(proposed) || proposed <= 0) {
+                      Alert.alert('Invalid price', 'Please enter a valid number');
+                      return;
+                    }
+
+                    try {
+                      setCreatingNegotiation(true);
+                      const negotiation = await apiClient.createNegotiation({
+                        productId: item.id,
+                        proposedPrice: proposed,
+                      });
+                      setShowNegotiateModal(false);
+                      (navigation as any).navigate('NegotiationChat', {
+                        negotiationId: negotiation.id,
+                      });
+                    } catch (_e) {
+                      Alert.alert('Error', 'Failed to start negotiation');
+                    } finally {
+                      setCreatingNegotiation(false);
+                    }
+                  }}
+                  disabled={creatingNegotiation}
+                >
+                  <Text style={styles.modalConfirmText}>
+                    {creatingNegotiation ? 'Sending...' : 'Send Offer'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </View>
   );
@@ -521,6 +600,77 @@ const styles = StyleSheet.create({
   },
   disabledMessageButtonText: {
     color: '#999',
+  },
+  negotiateButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    backgroundColor: '#489163',
+    borderRadius: 12,
+    gap: 8,
+  },
+  negotiateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111',
+    marginBottom: 6,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  modalInput: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: '#F3F4F6',
+  },
+  modalConfirmButton: {
+    backgroundColor: '#489163',
+  },
+  modalCancelText: {
+    color: '#111827',
+    fontWeight: '600',
+  },
+  modalConfirmText: {
+    color: '#fff',
+    fontWeight: '600',
   },
   orderButton: {
     flex: 1,

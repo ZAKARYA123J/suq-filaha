@@ -93,7 +93,7 @@ function MainTabs() {
       />
       <Tab.Screen 
         name="ProfileTab" 
-        component={NegotiationChatScreen}
+        component={ProfileScreen}
         options={{ tabBarLabel: 'Profile' }}
       />
     </Tab.Navigator>
@@ -204,7 +204,8 @@ function App() {
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         {/* Remove ProfileScreen - it's in MainTabs already */}
         {/* Remove ChatList - it's in MainTabs as ChatTab */}
-        <Stack.Screen name="Chat" component={ChatScreen} />
+        <Stack.Screen name="Chat" component={ChatScreen as any} />
+        <Stack.Screen name="NegotiationChat" component={NegotiationChatScreen as any} />
         {/* Add CartScreen if needed */}
         <Stack.Screen name="Cart" component={CartScreen} />
       </>
