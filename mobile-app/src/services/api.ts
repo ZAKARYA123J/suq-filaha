@@ -110,6 +110,40 @@ class ApiClient {
         return response.data;
     }
 
+    async createProduct(data: FormData) {
+        const response = await this.client.post('/products', data, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    }
+
+    async updateProduct(id: string, data: FormData) {
+        const response = await this.client.put(`/products/${id}`, data, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    }
+
+    async deleteProduct(id: string) {
+        const response = await this.client.delete(`/products/${id}`);
+        return response.data;
+    }
+
+    async toggleProductAvailability(id: string) {
+        const response = await this.client.patch(`/products/${id}/toggle-availability`);
+        return response.data;
+    }
+
+    async getMyProducts(isAvailable?: boolean) {
+        const params = isAvailable !== undefined ? { isAvailable } : {};
+        const response = await this.client.get('/products/my-products', { params });
+        return response.data;
+    }
+
     // Order endpoints
     async createOrder(data: {
         farmerId: string;

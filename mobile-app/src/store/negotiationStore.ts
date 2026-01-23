@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { phoenixService, NegotiationMessage } from '../services/phoenix';
-import { useAuthStore } from '../store/authStore';
+
 import { apiClient } from '../services/api';
 
 export interface Negotiation {
@@ -125,8 +125,8 @@ export const useNegotiationStore = create<NegotiationStore>()(
         }
 
         return success || false;
-      } catch (error) {
-        set({ error: 'Failed to connect to negotiation', loading: false });
+      } catch (error:any) {
+        set({ error: error.message || 'Failed to connect to negotiation', loading: false });
         return false;
       }
     },
@@ -191,9 +191,9 @@ export const useNegotiationStore = create<NegotiationStore>()(
           messages: Array.isArray(messages) ? messages : [],
           loading: false,
         });
-      } catch (_error) {
+      } catch (_error: any) {
         set({ 
-          error: 'Failed to load negotiation',
+          error: _error.message || 'Failed to load negotiation',
           loading: false 
         });
       }

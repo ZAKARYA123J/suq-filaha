@@ -95,44 +95,79 @@ async createProduct(farmerId: string, data: CreateProductInput) {
     });
   }
 
-  async updateProduct(productId: string, farmerId: string, data: UpdateProductInput) {
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    });
+// Before the prisma.product.update() call, you need to construct the data object
 
-    if (!product || product.farmerId !== farmerId) {
-      throw new Error('Product not found or unauthorized');
-    }
+async updateProduct(
+  productId: string,
+  farmerId: string,
+  updateData: any, // This should be the parsed FormData
+  files?: Express.Multer.File[]
+) {
+  // Verify ownership
+  const existingProduct = await prisma.product.findUnique({
+    where: { id: productId },
+  });
 
-    return await prisma.product.update({
-      where: { id: productId },
-      data,
-      include: {
-        farmer: {
-          select: {
-            id: true,
-            name: true,
-            location: true,
-            rating: true,
-          },
+  if (!existingProduct || existingProduct.farmerId !== farmerId) {
+    throw new Error('Product not found or unauthorized');
+  }
+
+  // ✅ Construct the data object for Prisma
+  const data: any = {};
+
+  // Add fields only if they exist in updateData
+  if (updateData.name) data.name = updateData.name;
+  if (updateData.category) data.category = updateData.category;
+  if (updateData.description) data.description = updateData.description;
+  if (updateData.price) data.price = parseFloat(updateData.price);
+  if (updateData.quantity) data.quantity = parseFloat(updateData.quantity);
+  if (updateData.unit) data.unit = updateData.unit;
+  if (updateData.quality) data.quality = updateData.quality;
+  if (updateData.harvestDate) data.harvestDate = new Date(updateData.harvestDate);
+
+  // Handle image uploads if new images are provided
+  if (files && files.length > 0) {
+    const imageUrls = files.map(file => file.path || file.filename);
+    data.images = imageUrls;
+  }
+
+  // ✅ Now update with the constructed data
+  return await prisma.product.update({
+    where: {
+      id: productId,
+    },
+    data, // ✅ This was missing!
+    include: {
+      farmer: {
+        select: {
+          id: true,
+          name: true,
+          location: true,
+          rating: true,
         },
       },
-    });
+    },
+  });
+}
+
+async deleteProduct(productId: string, farmerId: string) {
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+  });
+
+  if (!product || product.farmerId !== farmerId) {
+    throw new Error('Product not found or unauthorized');
   }
 
-  async deleteProduct(productId: string, farmerId: string) {
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    });
-
-    if (!product || product.farmerId !== farmerId) {
-      throw new Error('Product not found or unauthorized');
-    }
-
-    return await prisma.product.delete({
-      where: { id: productId },
-    });
-  }
+  // ✅ Soft delete - just mark as unavailable and add a deletedAt timestamp
+  return await prisma.product.update({
+    where: { id: productId },
+    data: {
+      isAvailable: false,
+ 
+    },
+  });
+}
 
   async searchProducts(searchTerm: string, filters?: {
     category?: string;

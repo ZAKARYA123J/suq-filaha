@@ -143,8 +143,6 @@ export default function ChatListScreen() {
         containerStyle={styles.searchContainer}
         inputContainerStyle={styles.searchInputContainer}
         inputStyle={styles.searchInput}
-        lightTheme
-        round
       />
 
       {/* Tabs */}

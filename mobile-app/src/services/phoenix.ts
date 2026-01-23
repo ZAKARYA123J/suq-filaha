@@ -2,7 +2,7 @@ import { Socket, Channel } from 'phoenix';
 import { useAuthStore } from '../store/authStore';
 
 // Update this to your Phoenix server URL
-const PHOENIX_URL = 'ws://192.168.1.160:4000/socket';
+const PHOENIX_URL = 'ws://192.168.1.33:4000/socket';
 
 export interface NegotiationMessage {
   id: string;
@@ -156,7 +156,7 @@ class PhoenixService {
 
     // Join the channel
     return new Promise<boolean>((resolve) => {
-      this.negotiationChannel
+      this.negotiationChannel!
         .join()
         .receive('ok', () => {
           console.log(`Joined negotiation channel: ${negotiationId}`);

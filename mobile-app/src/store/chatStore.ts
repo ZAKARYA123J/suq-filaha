@@ -5,7 +5,7 @@ import { apiClient } from '../services/api';
 import { useAuthStore } from './authStore';
 import { Platform } from 'react-native';
 
-const CHAT_SOCKET_URL_OVERRIDE = 'ws://192.168.1.160:4000/socket';
+const CHAT_SOCKET_URL_OVERRIDE = 'ws://192.168.1.33:4000/socket';
 
 const getChatSocketUrl = (): string => {
   if (CHAT_SOCKET_URL_OVERRIDE) return CHAT_SOCKET_URL_OVERRIDE;

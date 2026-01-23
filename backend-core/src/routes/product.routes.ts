@@ -49,7 +49,9 @@ router.put(
   '/:id',
   authenticate,
   authorize('FARMER'),
-  validate(updateProductSchema),
+    uploadProductImages,
+
+  // validate(updateProductSchema),
   productController.update
 );
 

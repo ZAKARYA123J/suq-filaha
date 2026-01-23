@@ -9,6 +9,19 @@ services:
       POSTGRES_DB: suqfilaha
     ports:
       - "5433:5432"
+  api:
+    build: .
+    container_name: api
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - .:/src
+      - /src/node_modules
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
     # Data will be lost when container is removed
 # volumes:
 #   postgres-data:

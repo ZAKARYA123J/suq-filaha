@@ -61,6 +61,7 @@ model Product {
   name         String
   category     String
   quantity     Float
+    description String?   // ✅ ADD THIS
   unit         String
   price        Float
   harvestDate  DateTime?

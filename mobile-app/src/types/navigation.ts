@@ -1,3 +1,5 @@
+import { Product } from './index';
+
 // types/navigation.ts (create this file)
 export type RootStackParamList = {
   // Auth stack
@@ -21,6 +23,12 @@ export type RootStackParamList = {
   ChatList: undefined;
   NegotiationChat: { negotiationId: string };
   NegotiationHistory: undefined;
+  
+  // Farmer Product Management
+  FarmerProducts: { filter?: 'available' | 'unavailable' } | undefined;
+  AddProduct: undefined;
+  EditProduct: { product: Product };
+  AddEditProduct: { product?: Product };
 };
 
 export type ChatStackParamList = {
@@ -39,6 +47,8 @@ export type TabParamList = {
   OrdersTab: undefined;
   ChatTab: undefined;
   ProfileTab: undefined;
+  FarmerHomeTab: undefined;
+  FarmerProductsTab: undefined;
 };
 
 // Use this for navigation prop in screens

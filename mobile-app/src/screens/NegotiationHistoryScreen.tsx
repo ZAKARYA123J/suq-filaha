@@ -14,7 +14,6 @@ import {
   View,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-
 import { useAuthStore } from '../store/authStore';
 import { Negotiation } from '../store/negotiationStore';
 import { apiClient, getErrorMessage } from '../services/api';

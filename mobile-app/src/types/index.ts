@@ -11,6 +11,8 @@ export interface Product {
     description?: string;
     farmerName?: string; // Optional for display
     farmerLocation?: string; // Optional for display
+    harvestDate?: string;
+    quality?: string;
 }
 
 export interface OrderItem {
