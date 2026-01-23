@@ -21,11 +21,12 @@ import ProductDetailScreen from './screens/ProductDetailScreen';
 import CartScreen from './screens/CartScreen';
 import ChatScreen from './screens/ChatScreen';
 import OrdersScreen from './screens/OrdersScreen';
+import NegotiationChatScreen from './screens/NegotiationChatScreen';
 import { useAuthStore } from './store/authStore';
 import { StatusBar } from 'react-native';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-
+import ChatListScreen from './screens/ChatListScreen';
 // Create a Tab Navigator for the main app screens
 function MainTabs() {
   return (
@@ -43,8 +44,6 @@ function MainTabs() {
             iconName = focused ? 'receipt' : 'receipt-outline';
           } else if (route.name === 'ChatTab') {
             iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
-          } else if (route.name === 'CartTab') {
-            iconName = focused ? 'cart' : 'cart-outline';
           } else if (route.name === 'ProfileTab') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -54,7 +53,6 @@ function MainTabs() {
         tabBarActiveTintColor: '#489163',
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
-          position: 'absolute',
           paddingBottom: 20,
           paddingTop: 8,
           height: 75,
@@ -90,12 +88,12 @@ function MainTabs() {
       />
       <Tab.Screen 
         name="ChatTab" 
-        component={ChatScreen}
+        component={ChatListScreen}  // Changed to ChatListScreen
         options={{ tabBarLabel: 'Chat' }}
       />
       <Tab.Screen 
-  name="ProfileTab" 
-  component={ProfileScreen}  // Use the ProfileScreen instead of CartScreen
+        name="ProfileTab" 
+        component={NegotiationChatScreen}
         options={{ tabBarLabel: 'Profile' }}
       />
     </Tab.Navigator>
@@ -165,54 +163,54 @@ function App() {
     backgroundColor="#000"  
         translucent={false}   
   />
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          {!isAuthenticated || authError ? (
-            <>
-              {showOnboarding && (
-                <Stack.Screen name="Onboarding">
-                  {(props) => (
-                    <OnboardingScreen
-                      {...props}
-                      onComplete={handleOnboardingComplete}
-                    />
-                  )}
-                </Stack.Screen>
-              )}
-              <Stack.Screen name="PhoneInput" component={PhoneInputScreen} />
-              <Stack.Screen
-                name="OtpVerification"
-                component={OtpVerificationScreen}
+    <NavigationContainer>
+  <Stack.Navigator
+    screenOptions={{
+      headerShown: false,
+    }}
+  >
+    {!isAuthenticated || authError ? (
+      <>
+        {showOnboarding && (
+          <Stack.Screen name="Onboarding">
+            {(props) => (
+              <OnboardingScreen
+                {...props}
+                onComplete={handleOnboardingComplete}
               />
-              <Stack.Screen
-                name="UserTypeSelection"
-                component={UserTypeSelectionScreen}
-              />
-              <Stack.Screen
-                name="CreatePassword"
-                component={CreatePasswordScreen}
-              />
-              <Stack.Screen name="Products" component={ProductsScreen} />
-              <Stack.Screen name="Login" component={LoginScreen} />
-            </>
-          ) : (
-            <>
-              <Stack.Screen name="Main">
-                {(props) => <MainTabs {...props} 
-                onAuthError={handleAuthError}
-                />}
-              </Stack.Screen>
-              <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-              <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-              <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
+            )}
+          </Stack.Screen>
+        )}
+        <Stack.Screen name="PhoneInput" component={PhoneInputScreen} />
+        <Stack.Screen
+          name="OtpVerification"
+          component={OtpVerificationScreen}
+        />
+        <Stack.Screen
+          name="UserTypeSelection"
+          component={UserTypeSelectionScreen}
+        />
+        <Stack.Screen
+          name="CreatePassword"
+          component={CreatePasswordScreen}
+        />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        {/* Remove Products screen from here - it should be in MainTabs */}
+      </>
+    ) : (
+      <>
+        <Stack.Screen name="Main" component={MainTabs} />
+        <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        {/* Remove ProfileScreen - it's in MainTabs already */}
+        {/* Remove ChatList - it's in MainTabs as ChatTab */}
+        <Stack.Screen name="Chat" component={ChatScreen} />
+        {/* Add CartScreen if needed */}
+        <Stack.Screen name="Cart" component={CartScreen} />
+      </>
+    )}
+  </Stack.Navigator>
+</NavigationContainer>
     </SafeAreaProvider>
   );
 }

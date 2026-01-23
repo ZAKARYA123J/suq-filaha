@@ -163,7 +163,7 @@ export default function HomeScreen({ navigation }: any) {
 
 /* -------------  STYLES  ------------- */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff',  marginBottom: 40,
+  container: { flex: 1, backgroundColor: '#fff', 
      // space for tab bar
      // 
       },

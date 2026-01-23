@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   button: {
-    width: 327, // You can adjust this or use '90%' if preferred
+    width: 327,
     backgroundColor: '#FFF4E8',
     paddingVertical: 16,
     borderRadius: 30,

@@ -5,7 +5,6 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
@@ -15,6 +14,10 @@ import { useOrderStore } from '../store/orderStore';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { Order } from '../store/orderStore';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 // Status color mapping
 const getStatusColor = (status: Order['status']) => {
   switch (status) {

@@ -6,15 +6,18 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   Alert,
   Image,
-  FlatListProps,
+  Pressable,
 } from 'react-native';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
 
 import { useChatStore, Message } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
@@ -26,22 +29,22 @@ type ChatStackParamList = {
 };
 
 type ChatScreenRouteProp = RouteProp<ChatStackParamList, 'Chat'>;
-type ChatScreenNavigationProp = StackNavigationProp<ChatStackParamList, 'Chat'>;
+type ChatScreenNavigationProp = StackNavigationProp<
+  ChatStackParamList,
+  'Chat'
+>;
 
 interface Props {
   route: ChatScreenRouteProp;
   navigation: ChatScreenNavigationProp;
 }
 
-
-
-
-
 /* ================== COMPONENT ================== */
 
-export default function ChatScreen() {
-  const  chatId  = "cmkoerjd8000048jrod50aazn";
+const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { chatId } = route.params;
   const { user } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const {
     messages,
@@ -52,8 +55,7 @@ export default function ChatScreen() {
     sendMessage,
     connectToChat,
     disconnectFromChat,
-    markAsRead,
-    chatRoom, // <-- EXPECTED FROM STORE
+    chatRoom,
   } = useChatStore();
 
   const [text, setText] = useState('');
@@ -83,14 +85,6 @@ export default function ChatScreen() {
     }
   }, [error]);
 
-//   useEffect(() => {
-//     if (flatListRef.current && messages.length > 0) {
-//       setTimeout(() => {
-//         flatListRef.current?.scrollToEnd({ animated: true });
-//       }, 100);
-//     }
-//   }, [messages]);
-
   /* ---------- Actions ---------- */
   const onSend = () => {
     if (!text.trim() || !user) return;
@@ -103,24 +97,7 @@ export default function ChatScreen() {
     setText('');
   };
 
-  const onViewableItemsChanged: FlatListProps<Message>['onViewableItemsChanged'] =
-    ({ viewableItems }) => {
-      if (!user) return;
-
-      const unreadIds = viewableItems
-        .filter(
-          (v) =>
-            !v.item.isRead &&
-            v.item.senderId !== user.id
-        )
-        .map((v) => v.item.id);
-
-    //   if (unreadIds.length > 0) {
-    //     markAsRead(unreadIds);
-    //   }
-    };
-
-  /* ---------- Render ---------- */
+  /* ---------- Render message ---------- */
   const renderItem = ({ item }: { item: Message }) => {
     const isMine = item.senderId === user?.id;
 
@@ -151,19 +128,33 @@ export default function ChatScreen() {
     );
   };
 
-//   if (loading && messages.length === 0) {
-//     return (
-//       <View style={styles.center}>
-//         <Text>Loading messages…</Text>
-//       </View>
-//     );
-//   }
+  /* ---------- Loading ---------- */
+  if (loading && messages.length === 0) {
+    return (
+      <SafeAreaView style={styles.center}>
+        <Text>Loading messages…</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[
+        styles.container,
+        { paddingTop: insets.top },
+      ]}
+    >
       {/* ================= HEADER ================= */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          hitSlop={10}
+          style={styles.backButton}
+        >
+          <Text style={styles.backLabel}>‹</Text>
+        </Pressable>
+
+        <View style={styles.headerContent}>
           {otherUser?.profileInfo ? (
             <Image
               source={{ uri: otherUser.profileInfo }}
@@ -172,7 +163,7 @@ export default function ChatScreen() {
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarLetter}>
-                {otherUser?.name?.charAt(0).toUpperCase()}
+                {otherUser?.name?.charAt(0).toUpperCase() || '?'}
               </Text>
             </View>
           )}
@@ -181,6 +172,7 @@ export default function ChatScreen() {
             <Text style={styles.headerTitle}>
               {otherUser?.name ?? 'Chat'}
             </Text>
+
             <View style={styles.connectionStatus}>
               <View
                 style={[
@@ -202,17 +194,25 @@ export default function ChatScreen() {
 
       {/* ================= CHAT ================= */}
       <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <FlatList
           ref={flatListRef}
-          data={messages}
+          data={[...messages].reverse()}
+          inverted
           keyExtractor={(m) => m.id}
           renderItem={renderItem}
           contentContainerStyle={{ paddingVertical: 8 }}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+          removeClippedSubviews={Platform.OS === 'android'}
+          onContentSizeChange={() =>
+            flatListRef.current?.scrollToOffset({
+              offset: 0,
+              animated: false,
+            })
+          }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text>No messages yet.</Text>
@@ -221,13 +221,20 @@ export default function ChatScreen() {
         />
 
         {/* ================= INPUT ================= */}
-        <View style={styles.inputRow}>
+        <View
+          style={[
+            styles.inputRow,
+            { paddingBottom: insets.bottom || 8 },
+          ]}
+        >
           <TextInput
             style={styles.input}
             value={text}
             onChangeText={setText}
             placeholder="Type a message"
+            placeholderTextColor="#999"
             multiline
+            maxLength={500}
           />
 
           <TouchableOpacity
@@ -244,26 +251,53 @@ export default function ChatScreen() {
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
-}
+};
 
 /* ================== STYLES ================== */
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
 
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFF',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
 
-  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  backButton: {
+    paddingRight: 12,
+  },
 
-  avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
+  backLabel: {
+    fontSize: 28,
+    color: '#2196F3',
+    lineHeight: 28,
+  },
+
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
 
   avatarPlaceholder: {
     width: 40,
@@ -275,11 +309,23 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
 
-  avatarLetter: { color: '#FFF', fontSize: 18, fontWeight: '600' },
+  avatarLetter: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '600',
+  },
 
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#212121' },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#212121',
+  },
 
-  connectionStatus: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
+  connectionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
 
   statusDot: {
     width: 8,
@@ -288,7 +334,10 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
 
-  statusText: { fontSize: 12, color: '#616161' },
+  statusText: {
+    fontSize: 12,
+    color: '#616161',
+  },
 
   bubble: {
     maxWidth: '80%',
@@ -310,7 +359,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 4,
   },
 
-  msgText: { fontSize: 15, color: '#212121' },
+  msgText: {
+    fontSize: 15,
+    color: '#212121',
+  },
 
   metaRow: {
     flexDirection: 'row',
@@ -319,9 +371,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  timestamp: { fontSize: 10, color: '#757575', marginRight: 6 },
+  timestamp: {
+    fontSize: 10,
+    color: '#757575',
+    marginRight: 6,
+  },
 
-  readStatus: { fontSize: 10, color: '#4CAF50' },
+  readStatus: {
+    fontSize: 10,
+    color: '#4CAF50',
+  },
 
   emptyContainer: {
     alignItems: 'center',
@@ -332,7 +391,8 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingTop: 8,
     backgroundColor: '#FFF',
     borderTopWidth: 1,
     borderTopColor: '#E0E0E0',
@@ -346,6 +406,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 15,
+    color: '#212121',
   },
 
   sendBtn: {
@@ -356,5 +417,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
 
-  sendLabel: { color: '#FFF', fontWeight: '600' },
+  sendLabel: {
+    color: '#FFF',
+    fontWeight: '600',
+  },
 });
+
+export default ChatScreen;

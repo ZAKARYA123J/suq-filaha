@@ -5,6 +5,7 @@ defmodule RealtimeGatewayWeb.UserSocket do
 
   # Channels
   channel "chat:*", RealtimeGatewayWeb.ChatChannel
+  channel "negotiation:*", RealtimeGatewayWeb.NegotiationChannel
 transport :websocket, Phoenix.Transports.WebSocket,
     timeout: 600_000  # 10 minutes
   # Connect function - authenticate users here

@@ -33,6 +33,11 @@ export class ChatService {
     return await prisma.chat.findUnique({
       where: { id: chatId },
       include: {
+        messages: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
         user1: {
           select: {
             id: true,

@@ -6,7 +6,7 @@ import { ProductFilter } from '../types';
 const API_BASE_URL = 'https://macbook.euplectes-rockhopper.ts.net/api';
 
 class ApiClient {
-    private client: AxiosInstance;
+    public client: AxiosInstance;
 
     constructor() {
         this.client = axios.create({
