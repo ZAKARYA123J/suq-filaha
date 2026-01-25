@@ -39,7 +39,6 @@ model User {
   registrationDate  DateTime      @default(now())
   rating            Float         @default(0.0)
   profileInfo       String?
-  
   products          Product[]
   ordersAsBuyer     Order[]       @relation("BuyerOrders")
   ordersAsFarmer    Order[]       @relation("FarmerOrders")
@@ -61,7 +60,7 @@ model Product {
   name         String
   category     String
   quantity     Float
-    description String?   // ✅ ADD THIS
+  description String? 
   unit         String
   price        Float
   harvestDate  DateTime?
@@ -98,7 +97,8 @@ model Order {
   notes           String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  
+     negotiationId   String?       @unique
+  negotiation     Negotiation?  @relation(fields: [negotiationId], references: [id])
   // Relations
   buyerId         String
   buyer           User          @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
@@ -142,13 +142,13 @@ model Negotiation {
 
   productId     String
   product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
   buyerId       String
   buyer         User            @relation("NegotiationBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
   
   farmerId      String
   farmer        User            @relation("NegotiationFarmer", fields: [farmerId], references: [id], onDelete: Cascade)
-  
+   order         Order?
   messages      NegotiationMessage[]
   
   @@map("negotiations")

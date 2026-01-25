@@ -33,7 +33,6 @@ import { RootStackParamList, TabParamList } from './types/navigation';
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
-// Farmer Tab Navigator - Defined outside of App component
 function FarmerTabs() {
   return (
     <Tab.Navigator
@@ -108,7 +107,6 @@ function FarmerTabs() {
   );
 }
 
-// Buyer Tab Navigator - Defined outside of App component
 function BuyerTabs() {
   return (
     <Tab.Navigator
@@ -231,7 +229,7 @@ function App() {
     );
   }
 
-  // Determine which tabs component to use based on user type
+
   const MainTabsComponent = user?.userType === 'FARMER' ? FarmerTabs : BuyerTabs;
 
   return (

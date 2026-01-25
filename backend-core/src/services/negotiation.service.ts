@@ -220,34 +220,54 @@ export class NegotiationService {
     });
   }
 
-  async updateStatus(negotiationId: string, userId: string, status: 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'PENDING') {
-    const negotiation = await prisma.negotiation.findUnique({
-      where: { id: negotiationId },
-      select: {
-        id: true,
-        buyerId: true,
-        farmerId: true,
-        status: true,
+async updateStatus(
+  negotiationId: string, 
+  userId: string, 
+  status: 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED' | 'PENDING'
+) {
+  const negotiation = await prisma.negotiation.findUnique({
+    where: { id: negotiationId },
+    select: {
+      id: true,
+      buyerId: true,
+      farmerId: true,
+      status: true,
+      proposedPrice: true,
+      productId: true,
+      product: {
+        select: {
+          id: true,
+          name: true,
+          quantity: true,
+          unit: true,
+        },
       },
-    });
+    },
+  });
 
-    if (!negotiation) {
-      throw new Error('Negotiation not found');
-    }
+  if (!negotiation) {
+    throw new Error('Negotiation not found');
+  }
 
-    if (userId !== negotiation.buyerId && userId !== negotiation.farmerId) {
-      throw new Error('Unauthorized');
-    }
+  if (userId !== negotiation.buyerId && userId !== negotiation.farmerId) {
+    throw new Error('Unauthorized');
+  }
 
-    if (negotiation.status !== 'PENDING') {
-      throw new Error('Negotiation is already ended');
-    }
+  if (negotiation.status !== 'PENDING') {
+    throw new Error('Negotiation is already ended');
+  }
 
-    return await prisma.negotiation.update({
+  // Only farmer can accept, only buyer can reject/cancel
+  if (status === 'ACCEPTED' && userId !== negotiation.farmerId) {
+    throw new Error('Only the farmer can accept negotiations');
+  }
+
+  // Use transaction to update negotiation and create order atomically
+  const result = await prisma.$transaction(async (tx) => {
+    // Update negotiation status
+    const updatedNegotiation = await tx.negotiation.update({
       where: { id: negotiationId },
-      data: {
-        status,
-      },
+      data: { status },
       include: {
         product: {
           include: {
@@ -276,5 +296,48 @@ export class NegotiationService {
         },
       },
     });
-  }
+
+    // If accepted, create an order
+    let order = null;
+    if (status === 'ACCEPTED') {
+      const totalAmount = negotiation.proposedPrice * negotiation.product.quantity;
+
+      order = await tx.order.create({
+        data: {
+          buyerId: negotiation.buyerId,
+          farmerId: negotiation.farmerId,
+          totalAmount,
+          deliveryAddress: '', // You might want to get this from buyer profile or require it
+          status: 'PENDING',
+          negotiationId: negotiation.id,
+          items: {
+            create: {
+              productId: negotiation.productId,
+              quantity: negotiation.product.quantity,
+              price: negotiation.proposedPrice,
+              total: totalAmount,
+            },
+          },
+        },
+        include: {
+          items: {
+            include: {
+              product: true,
+            },
+          },
+        },
+      });
+
+      // Optionally update product availability
+      await tx.product.update({
+        where: { id: negotiation.productId },
+        data: { isAvailable: false },
+      });
+    }
+
+    return { negotiation: updatedNegotiation, order };
+  });
+
+  return result;
+}
 }

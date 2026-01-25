@@ -41,7 +41,6 @@ class OfflineMessageQueue {
     return OfflineMessageQueue.instance;
   }
 
-  // Offline message management
   async loadOfflineMessages() {
     try {
       const stored = await AsyncStorage.getItem(OFFLINE_MESSAGES_KEY);
@@ -80,7 +79,6 @@ class OfflineMessageQueue {
     await this.saveOfflineMessages();
   }
 
-  // Queued message management (for when user is offline)
   async loadQueuedMessages() {
     try {
       const stored = await AsyncStorage.getItem(QUEUED_MESSAGES_KEY);
@@ -107,7 +105,6 @@ class OfflineMessageQueue {
     const negotiationId = message.negotiationId;
     const existing = this.queuedMessages.get(negotiationId) || [];
     
-    // Check if message is already queued
     const alreadyQueued = existing.some(msg => msg.id === message.id);
     if (!alreadyQueued) {
       const updated = [...existing, message];
@@ -142,7 +139,6 @@ class OfflineMessageQueue {
     await this.saveQueuedMessages();
   }
 
-  // Event listeners
   addListener(listener: (messages: QueuedMessage[]) => void) {
     this.listeners.push(listener);
   }
@@ -154,16 +150,14 @@ class OfflineMessageQueue {
     }
   }
 
-  private notifyListeners(negotiationId: string, messages: QueuedMessage[]) {
-    this.listeners.forEach(listener => listener(messages));
-  }
+  // private notifyListeners(negotiationId: string, messages: QueuedMessage[]) {
+  //   this.listeners.forEach(listener => listener(messages));
+  // }
 
-  // Cleanup old messages (older than 7 days)
   async cleanupOldMessages() {
     const now = Date.now();
     const sevenDaysAgo = now - (7 * 24 * 60 * 60 * 1000);
 
-    // Clean offline messages
     const originalLength = this.offlineMessages.length;
     this.offlineMessages = this.offlineMessages.filter(msg => msg.timestamp > sevenDaysAgo);
     
@@ -172,7 +166,6 @@ class OfflineMessageQueue {
       console.log(`Cleaned up ${originalLength - this.offlineMessages.length} old offline messages`);
     }
 
-    // Clean queued messages
     let queuedCleaned = 0;
     for (const [negotiationId, messages] of this.queuedMessages.entries()) {
       const filtered = messages.filter(msg => 
@@ -191,29 +184,23 @@ class OfflineMessageQueue {
     }
   }
 
-  // Network status helpers
   isOnline(): boolean {
-    // In React Native, we can check network status
-    // For now, we'll assume online - this should be integrated with NetInfo
     return true;
   }
 
-  async syncWhenOnline() {
-    // This should be called when the app comes back online
-    // Messages will be sent via the Phoenix service reconnection logic
-    console.log('Syncing queued messages when online...');
-  }
+  // async syncWhenOnline() {
+  //   // This should be called when the app comes back online
+  //   // Messages will be sent via the Phoenix service reconnection logic
+  //   console.log('Syncing queued messages when online...');
+  // }
 }
 
-// Export singleton instance
 export const offlineMessageQueue = OfflineMessageQueue.getInstance();
 
-// Initialize cleanup on app start
 setTimeout(() => {
   offlineMessageQueue.cleanupOldMessages();
 }, 5000); // Cleanup 5 seconds after app start
 
-// Cleanup every 24 hours
 setInterval(() => {
   offlineMessageQueue.cleanupOldMessages();
 }, 24 * 60 * 60 * 1000);

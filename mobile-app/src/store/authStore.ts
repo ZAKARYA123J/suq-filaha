@@ -16,19 +16,19 @@ export interface User {
 }
 
 interface AuthState {
-  // Auth state
+  // state
   user: User | null;
   token: string | null;
   chatToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 
-  // Registration flow state
+  // registrtion
   phoneNumber: string;
   isPhoneVerified: boolean;
   selectedUserType: UserType | null;
 
-  // Actions
+  // actions
   setPhoneNumber: (phone: string) => void;
   setPhoneVerified: (verified: boolean) => void;
   setUserType: (type: UserType) => void;
@@ -62,7 +62,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     selectedUserType: null,
   }),
 
-  // Auth actions
   setAuth: async (user: User, token: string, chatToken?: string) => {
     try {
       await AsyncStorage.setItem('auth_token', token);
@@ -134,10 +133,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  /**
-   * Clears all authentication data from both state and storage
-   * Similar to logout but doesn't reset registration flow state
-   */
+
   clearAuth: async () => {
     try {
       await AsyncStorage.removeItem('auth_token');
@@ -156,11 +152,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  /**
-   * Checks if the current authentication state is valid
-   * Returns true if user is authenticated with valid token and user data
-   * Returns false and clears auth if invalid
-   */
   checkAuthValidity: async () => {
     try {
       const { token, user } = get();

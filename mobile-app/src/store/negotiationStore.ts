@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { phoenixService, NegotiationMessage } from '../services/phoenix';
-
 import { apiClient } from '../services/api';
 
 export interface Negotiation {
@@ -42,7 +41,6 @@ export interface NegotiationStore {
 
 export const useNegotiationStore = create<NegotiationStore>()(
   subscribeWithSelector((set, get) => ({
-    // Initial state
     currentNegotiation: null,
     messages: [],
     loading: false,
@@ -55,19 +53,30 @@ export const useNegotiationStore = create<NegotiationStore>()(
     setCurrentNegotiation: (negotiation) => set({ currentNegotiation: negotiation }),
 
     connectToNegotiation: async (negotiationId: string): Promise<boolean> => {
+      console.log('🔄 Connecting to negotiation:', negotiationId);
       set({ loading: true, error: null });
 
       try {
-        await get().loadNegotiation(negotiationId);
+        // ✅ STEP 1: Fetch the negotiation data from API
+        console.log('📡 Fetching negotiation data...');
+        const negotiationData = await apiClient.getNegotiation(negotiationId);
+        console.log('✅ Negotiation data received:', negotiationData);
+        
+        // ✅ STEP 2: Set the negotiation in store
+        set({ currentNegotiation: negotiationData });
 
+        // ✅ STEP 3: Now connect to Phoenix channel
+        console.log('🔌 Connecting to Phoenix channel...');
         const success = await phoenixService.joinNegotiationChannel(negotiationId, {
           onPreviousMessages: (messages) => {
+            console.log('📨 Previous messages received:', messages.length);
             set({ messages: messages.sort((a, b) => 
               new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
             ) });
           },
           
           onQueuedMessages: (queuedMessages) => {
+            console.log('📬 Queued messages received:', queuedMessages.length);
             set(state => ({
               messages: [...state.messages, ...queuedMessages].sort((a, b) => 
                 new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -76,18 +85,21 @@ export const useNegotiationStore = create<NegotiationStore>()(
           },
           
           onNewMessage: (message) => {
+            console.log('💬 New message received:', message);
             set(state => ({
               messages: [...state.messages, message]
             }));
           },
           
           onUserJoined: (event) => {
+            console.log('👋 User joined:', event.userId);
             set(state => ({
               onlineUsers: [...state.onlineUsers.filter(id => id !== event.userId), event.userId]
             }));
           },
           
           onUserLeft: (event) => {
+            console.log('👋 User left:', event.userId);
             set(state => ({
               onlineUsers: state.onlineUsers.filter(id => id !== event.userId),
               isTyping: { ...state.isTyping, [event.userId]: false }
@@ -101,7 +113,7 @@ export const useNegotiationStore = create<NegotiationStore>()(
           },
           
           onNegotiationEnded: (event) => {
-            // Update negotiation status
+            console.log('🏁 Negotiation ended:', event.status);
             const { currentNegotiation } = get();
             if (currentNegotiation && currentNegotiation.id === event.negotiationId) {
               set({
@@ -114,24 +126,32 @@ export const useNegotiationStore = create<NegotiationStore>()(
           },
           
           onError: (reason: string) => {
+            console.error('❌ Phoenix error:', reason);
             set({ error: reason, loading: false });
           }
         });
 
         if (success) {
+          console.log('✅ Successfully connected to Phoenix channel');
           set({ connected: true, loading: false });
         } else {
-          set({ loading: false });
+          console.error('❌ Failed to connect to Phoenix channel');
+          set({ error: 'Failed to connect to channel', loading: false });
         }
 
         return success || false;
-      } catch (error:any) {
-        set({ error: error.message || 'Failed to connect to negotiation', loading: false });
+      } catch (error: any) {
+        console.error('❌ Connect to negotiation error:', error);
+        set({ 
+          error: error.message || 'Failed to connect to negotiation', 
+          loading: false 
+        });
         return false;
       }
     },
 
     disconnectFromNegotiation: () => {
+      console.log('🔌 Disconnecting from negotiation');
       phoenixService.leaveNegotiationChannel();
       set({
         connected: false,
@@ -146,16 +166,8 @@ export const useNegotiationStore = create<NegotiationStore>()(
       const success = phoenixService.sendMessage(content);
       if (!success) {
         set({ error: 'Failed to send message - not connected' });
-        return false;
       }
-
-      // Persist via REST (best-effort). Phoenix handles delivery.
-      const { currentNegotiation } = get();
-      if (currentNegotiation?.id) {
-        apiClient.sendNegotiationMessage(currentNegotiation.id, content).catch(() => undefined);
-      }
-
-      return true;
+      return success;
     },
 
     sendTyping: (typing: boolean) => {
@@ -167,15 +179,7 @@ export const useNegotiationStore = create<NegotiationStore>()(
       const success = phoenixService.endNegotiation(status);
       if (!success) {
         set({ error: 'Failed to end negotiation - not connected' });
-        return false;
       }
-
-      // Persist status via REST (best-effort)
-      const { currentNegotiation } = get();
-      if (currentNegotiation?.id) {
-        apiClient.updateNegotiationStatus(currentNegotiation.id, status).catch(() => undefined);
-      }
-
       return success;
     },
 
@@ -183,17 +187,15 @@ export const useNegotiationStore = create<NegotiationStore>()(
       set({ loading: true, error: null });
 
       try {
-        const negotiation = await apiClient.getNegotiation(negotiationId);
-        const messages = await apiClient.getNegotiationMessages(negotiationId);
-
-        set({
-          currentNegotiation: negotiation,
-          messages: Array.isArray(messages) ? messages : [],
-          loading: false,
-        });
-      } catch (_error: any) {
+        const negotiationData = await apiClient.getNegotiation(negotiationId);
         set({ 
-          error: _error.message || 'Failed to load negotiation',
+          currentNegotiation: negotiationData,
+          loading: false 
+        });
+      } catch (error: any) {
+        console.error('Failed to load negotiation:', error);
+        set({ 
+          error: error.message || 'Failed to load negotiation',
           loading: false 
         });
       }

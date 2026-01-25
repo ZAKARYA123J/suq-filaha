@@ -124,29 +124,52 @@ async createOrder(buyerId: string, data: CreateOrderInput) {
   }
 }
 
-  async getOrders(userId: string, userType: string) {
-    const where = userType === 'FARMER' ? { farmerId: userId } : { buyerId: userId };
+async getOrders(userId: string, userType: string) {
+  const where = userType === 'FARMER' 
+    ? { farmerId: userId } 
+    : { buyerId: userId };
 
-    return await prisma.order.findMany({
-      where,
-      include: {
-        items: {
-          include: {
-            product: true,
+  return await prisma.order.findMany({
+    where,
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              farmer: {
+                select: {
+                  id: true,
+                  name: true,
+                  phoneNumber: true,
+                  location: true,
+                },
+              },
+            },
           },
         },
-        buyer: {
-          select: { id: true, name: true, phoneNumber: true },
-        },
-        farmer: {
-          select: { id: true, name: true, phoneNumber: true },
+      },
+      buyer: {
+        select: { 
+          id: true, 
+          name: true, 
+          phoneNumber: true,
+          location: true,
         },
       },
-      orderBy: {
-        createdAt: 'desc',
+      farmer: {
+        select: { 
+          id: true, 
+          name: true, 
+          phoneNumber: true,
+          location: true,
+        },
       },
-    });
-  }
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+}
   
   async getOrderById(orderId: string) {
     return await prisma.order.findUnique({

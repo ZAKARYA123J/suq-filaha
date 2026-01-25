@@ -24,21 +24,22 @@ defmodule RealtimeGatewayWeb.ChatChannel do
     {:noreply, socket}
   end
 
-  def handle_in("new_message", %{"body" => body}, socket) do
-    userId = Map.get(socket.assigns, :userId, "anonymous")
+def handle_in("new_message", %{"body" => body}, socket) do
+  userId = Map.get(socket.assigns, :userId, "anonymous")
+  message = %{
+    id: generate_id(),
+    body: body,
+    userId: userId,
+    chat_id: socket.assigns.chat_id,
+    inserted_at: DateTime.utc_now()
+  }
 
-    message = %{
-      id: generate_id(),
-      body: body,
-      userId: userId,
-      chat_id: socket.assigns.chat_id,
-      inserted_at: DateTime.utc_now()
-    }
+  # Send to everyone EXCEPT the sender
+  broadcast_from(socket, "new_message", message)
 
-    broadcast(socket, "new_message", message)
-
-    {:reply, {:ok, message}, socket}
-  end
+  # Send reply only to the sender
+  {:reply, {:ok, message}, socket}
+end
 
   def handle_in("typing", payload, socket) do
     userId = Map.get(socket.assigns, :userId, "anonymous")

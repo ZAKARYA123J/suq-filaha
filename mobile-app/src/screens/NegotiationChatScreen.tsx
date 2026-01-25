@@ -14,31 +14,26 @@ import {
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-
+import { RootStackParamList } from '../types/navigation';
 import { useNegotiationStore } from '../store/negotiationStore';
 import { useAuthStore } from '../store/authStore';
 import { NegotiationMessage } from '../services/phoenix';
 
-type NegotiationStackParamList = {
-  NegotiationChat: { negotiationId: string };
-};
+// type NegotiationStackParamList = {
+//   NegotiationChat: { negotiationId: string };
+// };
 
-type NegotiationChatRouteProp = RouteProp<
-  NegotiationStackParamList,
-  'NegotiationChat'
->;
-type NegotiationChatNavigationProp = StackNavigationProp<
-  NegotiationStackParamList,
-  'NegotiationChat'
->;
+type NegotiationChatRouteProp = RouteProp<RootStackParamList, 'NegotiationChat'>;
+type NegotiationChatNavigationProp = StackNavigationProp<RootStackParamList, 'NegotiationChat'>;
 
 interface Props {
   route: NegotiationChatRouteProp;
   navigation: NegotiationChatNavigationProp;
 }
-
 export default function NegotiationChatScreen({ route, navigation }: Props) {
   const { negotiationId } = route.params;
+    console.log('NegotiationChat received params:', route.params);
+    console.log('negotiationId:', negotiationId);
   const { user } = useAuthStore();
 
   const {
@@ -56,6 +51,11 @@ export default function NegotiationChatScreen({ route, navigation }: Props) {
     onlineUsers,
     clearError,
   } = useNegotiationStore();
+  console.log('currentNegotiation:', currentNegotiation);
+  console.log('loading:', loading);
+  console.log('connected:', connected);
+  console.log('error:', error);
+  console.log('user:', user);
 
   const [text, setText] = useState('');
   const [showEndButtons, setShowEndButtons] = useState(false);
@@ -149,7 +149,6 @@ export default function NegotiationChatScreen({ route, navigation }: Props) {
     );
   };
 
-  /* ---------- Render Message ---------- */
   const renderMessage = ({ item }: { item: NegotiationMessage }) => {
     const isMine = item.senderId === user?.id;
 

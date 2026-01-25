@@ -1,7 +1,6 @@
 import { Socket, Channel } from 'phoenix';
 import { useAuthStore } from '../store/authStore';
 
-// Update this to your Phoenix server URL
 const PHOENIX_URL = 'ws://192.168.1.33:4000/socket';
 
 export interface NegotiationMessage {
@@ -58,8 +57,9 @@ class PhoenixService {
 
     this.socket = new Socket(PHOENIX_URL, {
       params: { token },
-      reconnectAfterMs: this.reconnectDelay as any,
-    });
+      reconnectAfterMs: (tries) => {
+       return Math.min(1000 * Math.pow(2, tries - 1), 30000);
+  },    });
 
     this.socket.onOpen(() => {
       console.log('Phoenix socket connected');
@@ -112,14 +112,12 @@ class PhoenixService {
       return;
     }
 
-    // Leave existing channel if any
     if (this.negotiationChannel) {
       this.leaveNegotiationChannel();
     }
 
     this.negotiationChannel = this.socket.channel(`negotiation:${negotiationId}`);
 
-    // Join events
     this.negotiationChannel.on('previous_messages', (payload) => {
       callbacks.onPreviousMessages?.(payload.messages);
     });
@@ -148,13 +146,11 @@ class PhoenixService {
       callbacks.onNegotiationEnded?.(payload);
     });
 
-    // Error handling
     this.negotiationChannel.onError((reason: string) => {
       console.error('Negotiation channel error:', reason);
       callbacks.onError?.(reason);
     });
 
-    // Join the channel
     return new Promise<boolean>((resolve) => {
       this.negotiationChannel!
         .join()
@@ -230,7 +226,6 @@ class PhoenixService {
     }
   }
 
-  // Network status monitoring
   onNetworkOnline() {
     if (!this.isConnected()) {
       this.connect();
@@ -242,7 +237,6 @@ class PhoenixService {
   }
 }
 
-// Singleton instance
 export const phoenixService = new PhoenixService();
 
 // Network event listeners

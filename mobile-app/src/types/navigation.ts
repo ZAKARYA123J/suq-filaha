@@ -2,6 +2,7 @@ import { Product } from './index';
 
 // types/navigation.ts (create this file)
 export type RootStackParamList = {
+
   // Auth stack
   Onboarding: undefined;
   PhoneInput: undefined;

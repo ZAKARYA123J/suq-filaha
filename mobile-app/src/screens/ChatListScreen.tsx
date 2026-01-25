@@ -126,12 +126,12 @@ export default function ChatListScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Chats</Text>
 
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={styles.headerAction}
           onPress={() => navigation.navigate('NegotiationHistory')}
         >
           <Text style={styles.headerActionText}>Negotiations</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       {/* Search Bar */}
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E0E0E0',
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 25,
     fontWeight: '700',
     color: '#212121',
   },

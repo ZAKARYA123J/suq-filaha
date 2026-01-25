@@ -144,7 +144,6 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
         { paddingTop: insets.top },
       ]}
     >
-      {/* ================= HEADER ================= */}
       <View style={styles.header}>
         <Pressable
           onPress={() => navigation.goBack()}

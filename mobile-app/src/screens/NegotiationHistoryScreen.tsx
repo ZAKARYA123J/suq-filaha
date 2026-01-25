@@ -6,21 +6,23 @@ import {
   Platform,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../store/authStore';
 import { Negotiation } from '../store/negotiationStore';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { apiClient, getErrorMessage } from '../services/api';
-
+import { RootStackParamList } from '../types/navigation'; // Import your types
+type NegotiationHistoryNavigationProp = StackNavigationProp<RootStackParamList, 'NegotiationHistory'>;
 export default function NegotiationHistoryScreen() {
-  const navigation = useNavigation<any>();
-  const { user } = useAuthStore();
+  const navigation = useNavigation<NegotiationHistoryNavigationProp>();
+    const { user } = useAuthStore();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -158,7 +160,7 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   header: {
     flexDirection: 'row',

@@ -2,8 +2,53 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import { useAuthStore } from '../store/authStore';
 import { ProductFilter } from '../types';
 
-// Update this to your backend URL
 const API_BASE_URL = 'https://macbook.euplectes-rockhopper.ts.net/api';
+
+export interface OrderItem {
+    id: string;
+    quantity: number;
+    price: number;
+    total: number;
+    notes?: string;
+    orderId: string;
+    productId: string;
+    product?: any;
+}
+
+export interface Order {
+    id: string;
+    status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+    orderDate: string;
+    deliveryDate?: string;
+    totalAmount: number;
+    deliveryAddress: string;
+    notes?: string;
+    buyerId: string;
+    farmerId: string;
+    negotiationId?: string;
+    items: OrderItem[];
+    buyer?: any;
+    farmer?: any;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Negotiation {
+    id: string;
+    originalPrice: number;
+    proposedPrice: number;
+    status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
+    startTime: string;
+    updatedAt: string;
+    productId: string;
+    buyerId: string;
+    farmerId: string;
+    product?: any;
+    buyer?: any;
+    farmer?: any;
+    messages?: any[];
+    order?: Order;
+}
 
 class ApiClient {
     public client: AxiosInstance;
@@ -17,7 +62,6 @@ class ApiClient {
             timeout: 10000,
         });
 
-        // Request interceptor to add auth token
         this.client.interceptors.request.use(
             (config) => {
                 const token = useAuthStore.getState().token;
@@ -29,12 +73,10 @@ class ApiClient {
             (error) => Promise.reject(error)
         );
 
-        // Response interceptor for error handling
         this.client.interceptors.response.use(
             (response) => response,
             async (error: AxiosError) => {
                 if (error.response?.status === 401) {
-                    // Token expired or invalid
                     await useAuthStore.getState().logout();
                 }
                 return Promise.reject(error);
@@ -42,7 +84,6 @@ class ApiClient {
         );
     }
 
-    // Auth endpoints
     async sendOtp(phoneNumber: string) {
         const response = await this.client.post('/auth/send-otp', { phoneNumber });
         return response.data;
@@ -99,7 +140,6 @@ class ApiClient {
         return response.data;
     }
 
-    // Product endpoints
     async getProducts(params?: ProductFilter) {
         const response = await this.client.get('/products', { params });
         return response.data;
@@ -144,10 +184,10 @@ class ApiClient {
         return response.data;
     }
 
-    // Order endpoints
     async createOrder(data: {
         farmerId: string;
         items: { productId: string; quantity: number }[];
+        deliveryAddress?: string;
     }) {
         const response = await this.client.post('/orders', data);
         return response.data;
@@ -162,6 +202,15 @@ class ApiClient {
         const response = await this.client.get(`/orders/${id}`);
         return response.data;
     }
+
+    async updateOrderStatus(
+        id: string,
+        status: 'PENDING' | 'CONFIRMED' | 'CANCELLED'
+    ) {
+        const response = await this.client.patch(`/orders/${id}/status`, { status });
+        return response.data;
+    }
+
 
     async createNegotiation(data: { productId: string; proposedPrice: number }) {
         const response = await this.client.post('/negotiations', data);
@@ -191,7 +240,7 @@ class ApiClient {
     async updateNegotiationStatus(
         id: string,
         status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED'
-    ) {
+    ): Promise<{ negotiation: Negotiation; order: Order | null }> {
         const response = await this.client.patch(`/negotiations/${id}/status`, { status });
         return response.data;
     }
@@ -200,6 +249,7 @@ class ApiClient {
         const response = await this.client.patch(`/negotiations/${id}/proposed-price`, { proposedPrice });
         return response.data;
     }
+
     async getFarmers() {
         const response = await this.client.get(`/users/farmers`);
         return response.data;
@@ -208,7 +258,6 @@ class ApiClient {
 
 export const apiClient = new ApiClient();
 
-// Helper function to extract error message
 export const getErrorMessage = (error: any): string => {
     if (axios.isAxiosError(error)) {
         return error.response?.data?.error || error.message || 'An error occurred';

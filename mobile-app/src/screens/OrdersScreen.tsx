@@ -18,6 +18,8 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+
 // Status color mapping
 const getStatusColor = (status: Order['status']) => {
   switch (status) {
@@ -33,6 +35,7 @@ const getStatusColor = (status: Order['status']) => {
 export default function OrdersScreen() {
   const { orders, fetchOrdersFromApi, loading, error } = useOrderStore();
   const [refreshing, setRefreshing] = useState(false);
+  const navigation = useNavigation<any>();
 
   // Load orders on screen focus
   useFocusEffect(
@@ -121,10 +124,22 @@ export default function OrdersScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Orders</Text>
-        <Text style={styles.headerSubtitle}>
-          {orders.length} order{orders.length !== 1 ? 's' : ''} found
-        </Text>
+        <View style={styles.headerRow}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.headerTitle}>My Orders</Text>
+            <Text style={styles.headerSubtitle}>
+              {orders.length} order{orders.length !== 1 ? 's' : ''} found
+            </Text>
+          </View>
+          
+          <TouchableOpacity
+            style={styles.headerAction}
+            onPress={() => navigation.navigate('NegotiationHistory')}
+          >
+            <Text style={styles.negotiationIcon}>💬</Text>
+            <Text style={styles.headerActionText}>Negotiations</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       
       <FlatList
@@ -175,20 +190,45 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingBottom: 10,
+    paddingBottom: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flex: 1,
+  },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#333',
+    color: '#212121',
   },
   headerSubtitle: {
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+  },
+  headerAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#489163',
+    borderRadius: 20,
+    gap: 6,
+  },
+  negotiationIcon: {
+    fontSize: 16,
+  },
+  headerActionText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '600',
   },
   listContent: {
     padding: 16,

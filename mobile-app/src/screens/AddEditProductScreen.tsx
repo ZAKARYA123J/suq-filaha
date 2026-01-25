@@ -319,7 +319,7 @@ const handleSubmit = useCallback(async () => {
               </TouchableOpacity>
             </View>
 
-            {/* Additional Details */}
+   
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Additional Details</Text>
               <Input

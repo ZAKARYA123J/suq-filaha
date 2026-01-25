@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16
+    container_name: suqfilaha-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: suqfilaha
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - suqfilaha-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js Backend API
+  backend_core:
+    build:
+      context: ./backend-core
+      dockerfile: Dockerfile
+    container_name: backend-core
+    restart: unless-stopped
+    env_file:
+      - ./backend-core/.env
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:root@postgres:5432/suqfilaha
+      - REALTIME_GATEWAY_URL=http://realtime_gateway:4000
+    volumes:
+      - ./backend-core:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - suqfilaha-network
+    command: pnpm run dev
+
+  # Phoenix Realtime Gateway
+  realtime_gateway:
+    build:
+      context: ./realtime_gateway
+      dockerfile: Dockerfile
+    container_name: realtime-gateway
+    restart: unless-stopped
+    environment:
+      - MIX_ENV=dev
+      - DATABASE_URL=postgresql://postgres:root@postgres:5432/suqfilaha
+      - BACKEND_API_URL=http://backend_core:3000
+      - SECRET_KEY_BASE=your-secret-key-base-here-generate-with-mix-phx-gen-secret
+    volumes:
+      - ./realtime_gateway:/app
+      - /app/deps
+      - /app/_build
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend_core:
+        condition: service_started
+    networks:
+      - suqfilaha-network
+    command: mix phx.server
+
+networks:
+  suqfilaha-network:
+    driver: bridge
+
+volumes:
+  postgres-data:

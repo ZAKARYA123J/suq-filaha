@@ -11,14 +11,14 @@ const getChatSocketUrl = (): string => {
   if (CHAT_SOCKET_URL_OVERRIDE) return CHAT_SOCKET_URL_OVERRIDE;
 
   const baseURL = apiClient.client.defaults.baseURL;
-  if (!baseURL) {
-    return Platform.OS === 'android'
-      ? 'ws://10.0.2.2:4000/socket'
-      : 'ws://localhost:4000/socket';
-  }
+  // if (!baseURL) {
+  //   return Platform.OS === 'android'
+  //     ? 'ws://10.0.2.2:4000/socket'
+  //     : 'ws://localhost:4000/socket';
+  // }
 
   try {
-    const match = baseURL.match(/^(https?:\/\/[^/]+)(\/.*)?$/i);
+    const match = baseURL?.match(/^(https?:\/\/[^/]+)(\/.*)?$/i);
     const origin = match?.[1];
     if (!origin) return 'ws://localhost:4000/socket';
 
