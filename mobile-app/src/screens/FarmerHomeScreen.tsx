@@ -34,8 +34,6 @@ type TabParamList = {
 
 type Props = BottomTabScreenProps<TabParamList, 'FarmerHomeTab'>;
 
-// Remove the interface definitions for navigation and route props
-// as they come from BottomTabScreenProps
 
 interface AnalyticsCardProps {
   title: string;
@@ -78,21 +76,20 @@ const FarmerHomeScreen = ({ navigation }: Props) => {
     }, [loadAnalytics])
   );
 
-  // Remove onRefresh as it's not used in this screen
 
 const handleQuickAction = (action: string) => {
   switch (action) {
     case 'addProduct':
-      navigation.navigate('AddEditProduct'); // This won't work either - see below
-      break;
+      (navigation as any).navigate('AddEditProduct'); 
+            break;
     case 'viewProducts':
-      navigation.navigate('FarmerProductsTab'); // ✅ Changed from 'FarmerProducts'
+      (navigation as any).navigate('FarmerProductsTab');
       break;
     case 'available':
-      navigation.navigate('FarmerProductsTab', { filter: 'available' }); // ✅ Changed
+      navigation.navigate('FarmerProductsTab', { filter: 'available' }); 
       break;
     case 'unavailable':
-      navigation.navigate('FarmerProductsTab', { filter: 'unavailable' }); // ✅ Changed
+      navigation.navigate('FarmerProductsTab', { filter: 'unavailable' }); 
       break;
   }
 };
@@ -110,13 +107,13 @@ const handleQuickAction = (action: string) => {
   return (
     <SafeAreaProvider>
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Welcome Section */}
+   
       <View style={styles.welcomeSection}>
         <Text style={styles.welcomeTitle}>Welcome back, {user?.name || 'Farmer'}! 👋</Text>
         <Text style={styles.welcomeSubtitle}>Here's your farm overview</Text>
       </View>
 
-      {/* Analytics Cards */}
+     
       <View style={styles.analyticsSection}>
         <Text style={styles.sectionTitle}>Farm Analytics</Text>
         <View style={styles.analyticsGrid}>
@@ -150,7 +147,7 @@ const handleQuickAction = (action: string) => {
         </View>
       </View>
 
-      {/* Quick Actions */}
+   
       <View style={styles.quickActionsSection}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.quickActionsGrid}>
@@ -172,7 +169,7 @@ const handleQuickAction = (action: string) => {
         </View>
       </View>
 
-      {/* Recent Products */}
+    
       {recentProducts.length > 0 && (
         <View style={styles.recentProductsSection}>
           <Text style={styles.sectionTitle}>Recent Products</Text>
@@ -196,7 +193,7 @@ const handleQuickAction = (action: string) => {
         </View>
       )}
 
-      {/* Empty State */}
+
       {totalProducts === 0 && (
         <View style={styles.emptySection}>
           <Icon name="eco" size={64} color="#4CAF50" />

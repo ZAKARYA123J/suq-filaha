@@ -12,7 +12,9 @@ config :realtime_gateway, RealtimeGatewayWeb.Endpoint,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "oRvJnbR5QHy15GuPzxNqRDe+CIvzrI1dancVhr4cmd7IVU+VPQIhDkZfl1yg5KoB",
-  watchers: []
+  watchers: [
+    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]}
+  ]
 
 # ## SSL Support
 #
@@ -43,8 +45,7 @@ config :realtime_gateway, dev_routes: true
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
 
-config :logger, :console,
-        level: :debug
+config :logger, :console, level: :debug
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20

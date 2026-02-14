@@ -22,8 +22,6 @@ import {
 import { useChatStore, Message } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 
-/* ================== TYPES ================== */
-
 type ChatStackParamList = {
   Chat: { chatId: string };
 };
@@ -38,8 +36,6 @@ interface Props {
   route: ChatScreenRouteProp;
   navigation: ChatScreenNavigationProp;
 }
-
-/* ================== COMPONENT ================== */
 
 const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
   const { chatId } = route.params;
@@ -61,7 +57,6 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
   const [text, setText] = useState('');
   const flatListRef = useRef<FlatList<Message>>(null);
 
-  /* ---------- Resolve other user ---------- */
   const otherUser = useMemo(() => {
     if (!chatRoom || !user) return null;
     return chatRoom.user1Id === user.id
@@ -69,7 +64,6 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
       : chatRoom.user1;
   }, [chatRoom, user]);
 
-  /* ---------- Lifecycle ---------- */
   useEffect(() => {
     connectToChat(chatId);
     loadMessages(chatId);
@@ -85,7 +79,6 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   }, [error]);
 
-  /* ---------- Actions ---------- */
   const onSend = () => {
     if (!text.trim() || !user) return;
 
@@ -97,7 +90,6 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
     setText('');
   };
 
-  /* ---------- Render message ---------- */
   const renderItem = ({ item }: { item: Message }) => {
     const isMine = item.senderId === user?.id;
 
@@ -128,7 +120,6 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
     );
   };
 
-  /* ---------- Loading ---------- */
   if (loading && messages.length === 0) {
     return (
       <SafeAreaView style={styles.center}>
@@ -191,10 +182,9 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
       </View>
 
-      {/* ================= CHAT ================= */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <FlatList
           ref={flatListRef}
@@ -205,7 +195,7 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
           contentContainerStyle={{ paddingVertical: 8 }}
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
-          removeClippedSubviews={Platform.OS === 'android'}
+          // removeClippedSubviews={Platform.OS === 'android'}
           onContentSizeChange={() =>
             flatListRef.current?.scrollToOffset({
               offset: 0,
@@ -219,7 +209,6 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
           }
         />
 
-        {/* ================= INPUT ================= */}
         <View
           style={[
             styles.inputRow,
@@ -252,7 +241,6 @@ const ChatScreen: React.FC<Props> = ({ route, navigation }) => {
   );
 };
 
-/* ================== STYLES ================== */
 
 const styles = StyleSheet.create({
   container: {

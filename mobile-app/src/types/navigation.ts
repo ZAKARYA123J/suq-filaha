@@ -1,9 +1,7 @@
 import { Product } from './index';
 
-// types/navigation.ts (create this file)
 export type RootStackParamList = {
 
-  // Auth stack
   Onboarding: undefined;
   PhoneInput: undefined;
   OtpVerification: { phoneNumber: string };
@@ -15,7 +13,6 @@ export type RootStackParamList = {
   };
   Login: undefined;
   
-  // Main stack
   Main: undefined;
   EditProfile: undefined;
   Cart: undefined;
@@ -25,7 +22,6 @@ export type RootStackParamList = {
   NegotiationChat: { negotiationId: string };
   NegotiationHistory: undefined;
   
-  // Farmer Product Management
   FarmerProducts: { filter?: 'available' | 'unavailable' } | undefined;
   AddProduct: undefined;
   EditProduct: { product: Product };
@@ -52,7 +48,6 @@ export type TabParamList = {
   FarmerProductsTab: undefined;
 };
 
-// Use this for navigation prop in screens
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RouteProp } from '@react-navigation/native';
 

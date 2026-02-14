@@ -8,7 +8,7 @@ interface CartState {
     total: number;
     itemCount: number;
     
-    // Actions
+
     addToCart: (product: Product, quantity: number) => void;
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number) => void;

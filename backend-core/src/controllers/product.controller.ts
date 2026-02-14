@@ -39,6 +39,18 @@ harvestDate: req.body.harvestDate
       res.status(400).json({ error: error.message });
     }
   }
+  
+  async getAvailble(req: AuthRequest, res: Response) {
+    try {
+      const {isAvailable } = req.query;
+      const products = await productService.getProductsAvailable({
+        isAvailable: isAvailable === 'true' ? true : isAvailable === 'false' ? false : undefined,
+      });
+      res.json(products);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
 
   async getById(req: AuthRequest, res: Response) {
     try {

@@ -4,6 +4,7 @@ import { apiClient } from '../services/api';
 
 interface FarmerProductState {
   products: Product[];
+  // productavailble: Product[];
   loading: boolean;
   error: string | null;
   fetchMyProducts: (isAvailable?: boolean) => Promise<void>;
@@ -17,6 +18,7 @@ interface FarmerProductState {
 
 export const useFarmerProductStore = create<FarmerProductState>((set) => ({
   products: [],
+  // productavailble:[],
   loading: false,
   error: null,
 
@@ -29,6 +31,15 @@ export const useFarmerProductStore = create<FarmerProductState>((set) => ({
       set({ error: error.message, loading: false });
     }
   },
+  // fetchMyProductsAvailble: async () => {
+  //   set({ loading: true, error: null });
+  //   try {
+  //     const productavailble = await apiClient.getProductsAvaible();
+  //     set({ productavailble, loading: false });
+  //   } catch (error: any) {
+  //     set({ error: error.message, loading: false });
+  //   }
+  // },
 
   createProduct: async (formData: FormData) => {
     set({ loading: true, error: null });

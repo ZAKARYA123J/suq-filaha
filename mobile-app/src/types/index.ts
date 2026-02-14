@@ -3,14 +3,14 @@ export interface Product {
     name: string;
     category: string;
     price: number;
-    quantity: number; // Available quantity
+    quantity: number;
     unit: string;
     images: string[];
     isAvailable: boolean;
     farmerId: string;
     description?: string;
-    farmerName?: string; // Optional for display
-    farmerLocation?: string; // Optional for display
+    farmerName?: string;
+    farmerLocation?: string; 
     harvestDate?: string;
     quality?: string;
 }
@@ -18,7 +18,7 @@ export interface Product {
 export interface OrderItem {
     id?: string;
     productId: string;
-    productName?: string; // Optional for display
+    productName?: string;
     quantity: number;
     price: number;
     total: number;

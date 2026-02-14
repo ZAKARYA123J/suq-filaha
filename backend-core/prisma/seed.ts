@@ -241,7 +241,6 @@ async function main() {
   }
 
   console.log('💬 Creating negotiations...');
-  // Create 40 negotiations
   for (let i = 0; i < 40; i++) {
     const product = getRandomItem(products);
     const buyer = getRandomItem(buyers);
@@ -263,21 +262,21 @@ async function main() {
       },
     ];
 
-    if (status !== NegotiationStatus.PENDING) {
-      if (status === NegotiationStatus.ACCEPTED) {
-        messages.push({
-          content: 'Yes, I can accept that price. When would you like to place the order?',
-          senderId: farmer!.id,
-          senderType: UserType.FARMER,
-        });
-      } else if (status === NegotiationStatus.REJECTED) {
-        messages.push({
-          content: `Sorry, the best I can do is ${Math.round(product.price * 0.95 * 100) / 100} MAD per ${product.unit}.`,
-          senderId: farmer!.id,
-          senderType: UserType.FARMER,
-        });
-      }
-    }
+    // if (status !== NegotiationStatus.PENDING) {
+    //   if (status === NegotiationStatus.ACCEPTED) {
+    //     messages.push({
+    //       content: 'Yes, I can accept that price. When would you like to place the order?',
+    //       senderId: farmer!.id,
+    //       senderType: UserType.FARMER,
+    //     });
+    //   } else if (status === NegotiationStatus.REJECTED) {
+    //     messages.push({
+    //       content: `Sorry, the best I can do is ${Math.round(product.price * 0.95 * 100) / 100} MAD per ${product.unit}.`,
+    //       senderId: farmer!.id,
+    //       senderType: UserType.FARMER,
+    //     });
+    //   }
+    // }
 
     await prisma.negotiation.create({
       data: {

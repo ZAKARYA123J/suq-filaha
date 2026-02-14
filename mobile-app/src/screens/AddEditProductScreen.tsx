@@ -42,7 +42,6 @@ interface ProductFormData {
   harvestDate?: string;
   quality: string;
 }
-
 const PRODUCT_CATEGORIES = [
   'Fruits', 'Vegetables', 'Grains', 'Dairy', 'Meat', 'Poultry', 'Herbs', 'Nuts', 'Other'
 ];
@@ -180,6 +179,54 @@ const handleSubmit = useCallback(async () => {
     Alert.alert('Error', error?.message || 'Failed to save product');
   }
 }, [formData, images, isEdit, product, createProduct, updateProduct, navigation, validateForm]);
+const handlepress = useCallback(async () => {
+  if (!validateForm()) return;
+
+  try {
+    const formDataToSend = new FormData();
+    
+    // ✅ Convert all values to strings
+    formDataToSend.append('name', formData.name.trim());
+    formDataToSend.append('category', formData.category);
+    formDataToSend.append('price', formData.price); // Keep as string
+    formDataToSend.append('quantity', formData.quantity); // Keep as string
+    formDataToSend.append('unit', formData.unit);
+    formDataToSend.append('description', formData.description.trim());
+    formDataToSend.append('quality', formData.quality.trim());
+    
+    if (formData.harvestDate) {
+      formDataToSend.append('harvestDate', formData.harvestDate);
+    }
+
+    // ✅ Properly format images for React Native
+    images.forEach((uri, index) => {
+      const filename = uri.split('/').pop() || `image_${index}.jpg`;
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      
+      formDataToSend.append('images', {
+        uri,
+        name: filename,
+        type: type,
+      } as any);
+    });
+
+    if (isEdit && product) {
+      await updateProduct(product.id, formDataToSend);
+    } else {
+      await createProduct(formDataToSend);
+    }
+
+    Alert.alert(
+      'Success', 
+      isEdit ? 'Product updated successfully' : 'Product created successfully',
+      [{ text: 'OK', onPress: () => navigation.goBack() }]
+    );
+  } catch (error: any) {
+    console.error('Submit error:', error);
+    Alert.alert('Error', error?.message || 'Failed to save product');
+  }
+}, [formData, images, isEdit, product, createProduct, updateProduct, navigation, validateForm]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -225,7 +272,7 @@ const handleSubmit = useCallback(async () => {
               </View>
             </View>
 
-            {/* Basic Information */}
+       
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Basic Information</Text>
               <Input
@@ -269,7 +316,7 @@ const handleSubmit = useCallback(async () => {
               />
             </View>
 
-            {/* Pricing & Quantity */}
+
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Pricing & Quantity</Text>
               <View style={styles.row}>

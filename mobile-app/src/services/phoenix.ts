@@ -1,7 +1,7 @@
 import { Socket, Channel } from 'phoenix';
 import { useAuthStore } from '../store/authStore';
 
-const PHOENIX_URL = 'ws://192.168.1.33:4000/socket';
+const PHOENIX_URL = 'ws://192.168.1.7:4000/socket';
 
 export interface NegotiationMessage {
   id: string;

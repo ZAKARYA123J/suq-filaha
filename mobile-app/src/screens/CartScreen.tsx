@@ -51,7 +51,6 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
         }
 
         try {
-            // Group items by farmer
             const ordersByFarmer: Record<string, any[]> = {};
             
             items.forEach(item => {
@@ -65,7 +64,6 @@ const CartScreen: React.FC<CartScreenProps> = ({ navigation }) => {
                 });
             });
 
-            // Create orders for each farmer
             const orderPromises = Object.entries(ordersByFarmer).map(
                 async ([farmerId, orderItems]) => {
                     return apiClient.createOrder({

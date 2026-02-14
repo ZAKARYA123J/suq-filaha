@@ -54,6 +54,27 @@ async createProduct(farmerId: string, data: CreateProductInput) {
       },
     });
   }
+  async getProductsAvailable(filters?: {
+    isAvailable?: boolean;
+    
+  }) {
+    return await prisma.product.findMany({
+      where: filters,
+      include: {
+        farmer: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+            rating: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
 
   async getProductById(productId: string) {
     return await prisma.product.findUnique({

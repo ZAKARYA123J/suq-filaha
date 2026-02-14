@@ -19,13 +19,13 @@ import Feather from 'react-native-vector-icons/Feather';
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.65;
 
-const categories = [
-  { id: 'grains', label: 'Grains', icon: '🌾' },
-  { id: 'veggie', label: 'Veggie', icon: '🥕' },
-  { id: 'fruits', label: 'Fruits', icon: '🍉' },
-  { id: 'livestock', label: 'Livestock', icon: '🐄' },
-  { id: 'tools', label: 'Tools', icon: '🔧' },
-];
+// const categories = [
+//   { id: 'grains', label: 'Grains', icon: '🌾' },
+//   { id: 'veggie', label: 'Veggie', icon: '🥕' },
+//   { id: 'fruits', label: 'Fruits', icon: '🍉' },
+//   { id: 'livestock', label: 'Livestock', icon: '🐄' },
+//   { id: 'tools', label: 'Tools', icon: '🔧' },
+// ];
 
 export default function HomeScreen({ navigation }: any) {
   const { user } = useAuthStore();
@@ -34,7 +34,6 @@ export default function HomeScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    // featured harvests
     apiClient
       .getProducts()
       .then((p) => setFeatured(p.slice(0, 6)))
@@ -82,7 +81,6 @@ export default function HomeScreen({ navigation }: any) {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.brandContainer}>
           <Text style={styles.brand}>Suq l-Filaha</Text>
@@ -93,12 +91,10 @@ export default function HomeScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      {/* User greeting */}
 <View style={styles.greetingContainer}>
-    <Text style={styles.greetingText}>Ahlan wa Sahlan,</Text>
-    <Text style={styles.userName}> {user?.name}</Text>
+  <Text style={styles.greetingText}>Ahlan wa Sahlan,</Text>
+  <Text style={styles.userName}>{user?.name}</Text>
 </View>
-      {/* Search */}
       <View style={styles.searchWrap}>
         <Feather name="search" size={20} color="#777" />
         <TextInput
@@ -109,7 +105,6 @@ export default function HomeScreen({ navigation }: any) {
         />
       </View>
 
-      {/* Featured Harvests */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Featured Harvests</Text>
@@ -134,7 +129,7 @@ export default function HomeScreen({ navigation }: any) {
       </View>
 
       {/* Categories */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
 <Text style={[styles.sectionTitle, { paddingHorizontal: 20, marginBottom: 12 }]}>
     Categories
   </Text>        <View style={styles.pills}>
@@ -145,9 +140,8 @@ export default function HomeScreen({ navigation }: any) {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </View> */}
 
-      {/* Top Rated Farmers */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Top Rated Farmers</Text>

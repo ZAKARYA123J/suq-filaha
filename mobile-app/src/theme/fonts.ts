@@ -1,4 +1,3 @@
-// src/theme/fonts.ts
 import { Platform } from 'react-native';
 
 export const fonts = {
@@ -15,7 +14,7 @@ export const fonts = {
     android: 'Roboto-Light',
   }),
     semiBold: Platform.select({
-    ios: 'SF Pro Text',        // weight controlled via fontWeight on iOS
-    android: 'Roboto-Medium',  // closest to SemiBold on Android
+    ios: 'SF Pro Text',  
+    android: 'Roboto-Medium', 
   }),
 };

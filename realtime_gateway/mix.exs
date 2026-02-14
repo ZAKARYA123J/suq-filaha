@@ -40,7 +40,11 @@ defmodule RealtimeGateway.MixProject do
   defp deps do
     [
       {:phoenix, "~> 1.8.0"},
+      {:phoenix_live_view, "~> 1.0.0-rc.0", override: true},
+      {:phoenix_html, "~> 4.0"},
       {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:floki, ">= 0.30.0", only: :test},
+      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.16"},
       {:req, "~> 0.5"},
       {:telemetry_metrics, "~> 1.0"},

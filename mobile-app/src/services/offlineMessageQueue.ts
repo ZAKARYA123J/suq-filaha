@@ -10,7 +10,7 @@ export interface OfflineMessage {
   senderId: string;
   senderType: 'FARMER' | 'BUYER';
   createdAt: string;
-  timestamp: number; // For ordering and cleanup
+  timestamp: number; 
 }
 
 export interface QueuedMessage {

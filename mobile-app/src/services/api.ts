@@ -144,6 +144,10 @@ class ApiClient {
         const response = await this.client.get('/products', { params });
         return response.data;
     }
+    async getProductsAvaible() {
+        const response = await this.client.get('/products/availble');
+        return response.data;
+    }
 
     async getProduct(id: string) {
         const response = await this.client.get(`/products/${id}`);
@@ -221,6 +225,7 @@ class ApiClient {
         const response = await this.client.get('/negotiations');
         return response.data;
     }
+
 
     async getNegotiation(id: string) {
         const response = await this.client.get(`/negotiations/${id}`);

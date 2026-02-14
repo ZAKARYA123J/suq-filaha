@@ -4,7 +4,6 @@ import {
   FlatList,
   Image,
   RefreshControl,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -14,7 +13,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SearchBar } from '@rneui/themed';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '../store/authStore';
 import { ChatListItem, useChatStore } from '../store/chatStore';
 
@@ -145,7 +144,7 @@ export default function ChatListScreen() {
         inputStyle={styles.searchInput}
       />
 
-      {/* Tabs */}
+
       <View style={styles.tabContainer}>
         <TouchableOpacity style={[styles.tab, styles.activeTab]}>
           <Text style={[styles.tabText, styles.activeTabText]}>All</Text>
@@ -158,7 +157,6 @@ export default function ChatListScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Chat List */}
       <View style={styles.listContainer}>
         {loading ? (
           <View style={styles.center}>

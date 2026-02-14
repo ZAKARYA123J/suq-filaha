@@ -95,10 +95,8 @@ end
           createdAt: persisted_message["createdAt"] || DateTime.utc_now()
         }
 
-        # Broadcast to all connected users
         broadcast(socket, "new_message", message)
 
-        # Check for offline users and queue messages
         queue_message_for_offline_users(socket.assigns.negotiation, negotiation_id, message)
 
         {:reply, {:ok, message}, socket}
@@ -168,7 +166,6 @@ end
     :ok
   end
 
-  # Private helper functions
 
   defp verify_negotiation_access(user_id, token, negotiation_id) do
     with {:ok, token} <- require_token(token),

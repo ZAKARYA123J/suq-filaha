@@ -70,7 +70,6 @@ model Product {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   
-
   farmerId     String
   farmer       User          @relation(fields: [farmerId], references: [id], onDelete: Cascade)
   orders       OrderItem[]
@@ -97,7 +96,7 @@ model Order {
   notes           String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-     negotiationId   String?       @unique
+  negotiationId   String?       @unique
   negotiation     Negotiation?  @relation(fields: [negotiationId], references: [id])
   // Relations
   buyerId         String
@@ -121,7 +120,6 @@ model OrderItem {
   total       Float
   notes       String?
   
- 
   orderId     String
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   

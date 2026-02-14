@@ -8,9 +8,9 @@ export default async function sendViaIAMAPI(phoneNumber: string, message: string
       },
       body: JSON.stringify({
         message: message,
-        to: phoneNumber,  
+        to: phoneNumber,
         sender_id: 'SuqFilaha',
-        bypass_optout: true 
+        bypass_optout: true
       })
     });
 
@@ -21,12 +21,12 @@ export default async function sendViaIAMAPI(phoneNumber: string, message: string
     }
 
     const result = await response.json() as any;
-    
+
     if (!result.success) {
       console.error('SMS.to API reported failure:', result);
       throw new Error(`SMS failed: ${result.message || 'Unknown error'}`);
     }
-    
+
     console.log('SMS sent successfully:', result);
     return result;
   } catch (error) {

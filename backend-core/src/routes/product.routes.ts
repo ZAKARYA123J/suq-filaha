@@ -20,6 +20,7 @@ router.post(
 
 // Search products (public/authenticated users)
 router.get('/search', authenticate, productController.search);
+router.get('/availble', authenticate,authorize('ADMIN'), productController.getAvailble);
 
 // Get products by category (public/authenticated users)
 router.get('/category/:category', authenticate, productController.getByCategory);

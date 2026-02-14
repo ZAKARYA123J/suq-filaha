@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiClient } from '../services/api'; 
 
 export type UserType = 'FARMER' | 'BUYER';
 
@@ -22,8 +23,9 @@ interface AuthState {
   chatToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  lastAuthCheck: number | null;
 
-  // registrtion
+  // registration
   phoneNumber: string;
   isPhoneVerified: boolean;
   selectedUserType: UserType | null;
@@ -39,6 +41,8 @@ interface AuthState {
   clearRegistrationFlow: () => void;
   clearAuth: () => Promise<void>;
   checkAuthValidity: () => Promise<boolean>;
+  refreshAuth: () => Promise<boolean>;
+  setLastAuthCheck: (timestamp: number) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -47,11 +51,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   chatToken: null,
   isAuthenticated: false,
   isLoading: true,
+  lastAuthCheck: null,
   phoneNumber: '',
   isPhoneVerified: false,
   selectedUserType: null,
 
-  // Registration flow actions
+
   setPhoneNumber: (phone: string) => set({ phoneNumber: phone }),
   setPhoneVerified: (verified: boolean) => set({ isPhoneVerified: verified }),
   setUserType: (type: UserType) => set({ selectedUserType: type }),
@@ -61,6 +66,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     isPhoneVerified: false,
     selectedUserType: null,
   }),
+
+  setLastAuthCheck: (timestamp: number) => set({ lastAuthCheck: timestamp }),
 
   setAuth: async (user: User, token: string, chatToken?: string) => {
     try {
@@ -75,6 +82,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         chatToken: chatToken || null,
         isAuthenticated: true,
         isLoading: false,
+        lastAuthCheck: Date.now(),
       });
     } catch (error) {
       console.error('Error saving auth data:', error);
@@ -83,9 +91,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
-      await AsyncStorage.removeItem('auth_token');
-      await AsyncStorage.removeItem('chat_token');
-      await AsyncStorage.removeItem('user');
+      // Clear all auth data
+      await AsyncStorage.multiRemove(['auth_token', 'chat_token', 'user']);
       set({
         user: null,
         token: null,
@@ -94,6 +101,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         phoneNumber: '',
         isPhoneVerified: false,
         selectedUserType: null,
+        lastAuthCheck: null,
       });
     } catch (error) {
       console.error('Error clearing auth data:', error);
@@ -102,9 +110,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loadAuth: async () => {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
-      const chatToken = await AsyncStorage.getItem('chat_token');
-      const userStr = await AsyncStorage.getItem('user');
+      const [token, chatToken, userStr] = await Promise.all([
+        AsyncStorage.getItem('auth_token'),
+        AsyncStorage.getItem('chat_token'),
+        AsyncStorage.getItem('user'),
+      ]);
 
       if (token && userStr) {
         const user = JSON.parse(userStr);
@@ -114,6 +124,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           chatToken,
           isAuthenticated: true,
           isLoading: false,
+          lastAuthCheck: Date.now(),
         });
       } else {
         set({ isLoading: false });
@@ -133,18 +144,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-
   clearAuth: async () => {
     try {
-      await AsyncStorage.removeItem('auth_token');
-      await AsyncStorage.removeItem('chat_token');
-      await AsyncStorage.removeItem('user');
+      await AsyncStorage.multiRemove(['auth_token', 'chat_token', 'user']);
       set({
         user: null,
         token: null,
         chatToken: null,
         isAuthenticated: false,
         isLoading: false,
+        lastAuthCheck: null,
       });
     } catch (error) {
       console.error('Error clearing auth data:', error);
@@ -152,51 +161,143 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  checkAuthValidity: async () => {
+  refreshAuth: async (): Promise<boolean> => {
     try {
-      const { token, user } = get();
+      // Try to get fresh user data using the profile endpoint
+      const profileData = await apiClient.getMyProfile();
       
-      // Check if both token and user exist in state
+      if (profileData) {
+        const { token, chatToken } = get();
+        
+        // Update user in state and storage
+        await get().setUser(profileData.user || profileData);
+        
+        // If tokens were refreshed in the response, update them
+        if (profileData.token) {
+          await get().setAuth(
+            profileData.user || profileData,
+            profileData.token,
+            profileData.chatToken || chatToken || undefined
+          );
+        }
+        
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error refreshing auth:', error);
+      return false;
+    }
+  },
+
+  checkAuthValidity: async (): Promise<boolean> => {
+    try {
+      const { token, user, lastAuthCheck } = get();
+            const now = Date.now();
+      if (lastAuthCheck && (now - lastAuthCheck) < 5 * 60 * 1000) {
+        console.log('Auth check skipped - recently validated');
+        return true;
+      }
+      
       if (!token || !user) {
-        // Try loading from storage
-        const storedToken = await AsyncStorage.getItem('auth_token');
-        const storedUserStr = await AsyncStorage.getItem('user');
+        const [storedToken, storedUserStr] = await Promise.all([
+          AsyncStorage.getItem('auth_token'),
+          AsyncStorage.getItem('user'),
+        ]);
         
         if (!storedToken || !storedUserStr) {
           await get().clearAuth();
           return false;
         }
         
-        // Validate stored user data
         try {
           const storedUser = JSON.parse(storedUserStr);
           if (!storedUser.id || !storedUser.phoneNumber) {
             await get().clearAuth();
             return false;
           }
+          
+          set({
+            user: storedUser,
+            token: storedToken,
+            isAuthenticated: true,
+            isLoading: false,
+            lastAuthCheck: now,
+          });
         } catch (parseError) {
           console.error('Error parsing stored user data:', parseError);
           await get().clearAuth();
           return false;
         }
-        
-        // Data exists in storage, reload it
-        await get().loadAuth();
-        return true;
       }
       
-      // Validate user object has required fields
-      if (!user.id || !user.phoneNumber || !user.userType) {
+      const currentUser = get().user;
+      if (!currentUser || !currentUser.id || !currentUser.phoneNumber || !currentUser.userType) {
         await get().clearAuth();
         return false;
       }
       
-      // Optional: Add token expiration check here if your tokens have expiry
-      // You could decode a JWT token and check its exp claim
+      try {
+        const profileData = await apiClient.getMyProfile();
+        
+        if (profileData) {
+          const updatedUser = profileData.user || profileData;
+          if (updatedUser.id !== currentUser.id) {
+            console.warn('User ID mismatch during auth check');
+            await get().clearAuth();
+            return false;
+          }
+          
+          await get().setUser(updatedUser);
+          set({ lastAuthCheck: now });
+          return true;
+        }
+        
+        set({ lastAuthCheck: now });
+        return true;
+        
+      } catch (error: any) {
+        console.error('Auth validation API error:', error);
+        
+        // Handle specific error cases
+        if (error.response) {
+          // Server responded with error status
+          if (error.response.status === 401) {
+            console.log('Token invalid or expired');
+            await get().clearAuth();
+            return false;
+          }
+          
+          if (error.response.status === 403) {
+            console.log('User not authorized');
+            await get().clearAuth();
+            return false;
+          }
+    
+          if (error.response.status >= 500) {
+            console.warn('Server error, using cached auth data temporarily');
+   
+            set({ lastAuthCheck: now });
+            return true;
+          }
+        }
+        
+        // Handle network errors
+        if (!error.response) {
+          console.warn('Network error, using cached auth data');
+          // Allow offline mode with cached data
+          // You might want to set a flag or state to indicate offline mode
+          set({ lastAuthCheck: now });
+          return true;
+        }
+        
+        // For other errors, clear auth
+        await get().clearAuth();
+        return false;
+      }
       
-      return true;
     } catch (error) {
-      console.error('Error checking auth validity:', error);
+      console.error('Unexpected error in checkAuthValidity:', error);
       await get().clearAuth();
       return false;
     }

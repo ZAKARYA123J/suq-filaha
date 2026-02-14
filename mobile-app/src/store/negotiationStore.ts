@@ -19,7 +19,6 @@ export interface Negotiation {
 }
 
 export interface NegotiationStore {
-  // State
   currentNegotiation: Negotiation | null;
   messages: NegotiationMessage[];
   loading: boolean;
@@ -28,7 +27,7 @@ export interface NegotiationStore {
   isTyping: Record<string, boolean>;
   onlineUsers: string[];
   
-  // Actions
+  // actions
   setCurrentNegotiation: (negotiation: Negotiation | null) => void;
   connectToNegotiation: (negotiationId: string) => Promise<boolean>;
   disconnectFromNegotiation: () => void;
@@ -49,7 +48,7 @@ export const useNegotiationStore = create<NegotiationStore>()(
     isTyping: {},
     onlineUsers: [],
 
-    // Actions
+
     setCurrentNegotiation: (negotiation) => set({ currentNegotiation: negotiation }),
 
     connectToNegotiation: async (negotiationId: string): Promise<boolean> => {
@@ -57,7 +56,6 @@ export const useNegotiationStore = create<NegotiationStore>()(
       set({ loading: true, error: null });
 
       try {
-        // ✅ STEP 1: Fetch the negotiation data from API
         console.log('📡 Fetching negotiation data...');
         const negotiationData = await apiClient.getNegotiation(negotiationId);
         console.log('✅ Negotiation data received:', negotiationData);
