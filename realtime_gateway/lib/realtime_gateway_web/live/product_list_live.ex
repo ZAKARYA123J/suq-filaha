@@ -4,12 +4,11 @@ defmodule RealtimeGatewayWeb.ProductListLive do
   alias RealtimeGateway.Services.ApiClient
 
   @impl true
-  def mount(_params, session, socket) do
-    jwt = session["jwt"]
-
+  def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:jwt, jwt)
+     |> assign(:jwt, socket.assigns.jwt)
+     |> assign(:current_user, socket.assigns.current_user)
      |> assign(:products, [])
      |> assign(:search_query, "")
      |> assign(:loading, true)
@@ -51,18 +50,7 @@ defmodule RealtimeGatewayWeb.ProductListLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-gray-100">
-      <header class="bg-white shadow">
-        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 class="text-3xl font-bold text-gray-900">
-            Marketplace
-          </h1>
-          <.link navigate={~p"/dashboard"} class="text-gray-500 hover:text-gray-700">
-            Back to Dashboard
-          </.link>
-        </div>
-      </header>
-
+    <div class="min-h-screen bg-gray-50">
       <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div class="px-4 py-6 sm:px-0">
           <!-- Search Bar -->

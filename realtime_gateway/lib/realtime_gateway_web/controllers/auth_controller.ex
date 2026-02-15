@@ -8,4 +8,12 @@ defmodule RealtimeGatewayWeb.AuthController do
     |> put_flash(:info, "Welcome back!")
     |> redirect(to: ~p"/dashboard")
   end
+
+  def logout(conn, _params) do
+    conn
+    |> clear_session()
+    |> configure_session(drop: true)
+    |> put_flash(:info, "Logged out")
+    |> redirect(to: ~p"/login")
+  end
 end

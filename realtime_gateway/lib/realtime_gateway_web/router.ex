@@ -25,6 +25,7 @@ defmodule RealtimeGatewayWeb.Router do
 
     live("/login", LoginLive, :index)
     get("/auth/login_token", AuthController, :login)
+    get("/logout", AuthController, :logout)
   end
 
   # Protected routes - require authentication
@@ -33,7 +34,9 @@ defmodule RealtimeGatewayWeb.Router do
 
     live_session :authenticated,
       on_mount: {RealtimeGatewayWeb.LiveAuth, :require_authenticated_user} do
-      live("/dashboard", DashboardLive, :index)
+      live("/dashboard", DashboardLive, :profile)
+      live("/dashboard/negotiations", DashboardLive, :negotiations)
+      live("/dashboard/products", DashboardLive, :products)
       live("/products", ProductListLive, :index)
       live("/negotiations/:id", NegotiationLive, :show)
     end

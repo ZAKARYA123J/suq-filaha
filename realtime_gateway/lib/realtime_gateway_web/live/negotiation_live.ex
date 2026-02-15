@@ -5,9 +5,9 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
   alias Phoenix.PubSub
 
   @impl true
-  def mount(%{"id" => negotiation_id}, session, socket) do
-    jwt = session["jwt"]
-    user = session["user"]
+  def mount(%{"id" => negotiation_id}, _session, socket) do
+    jwt = socket.assigns.jwt
+    user = socket.assigns.current_user
 
     if connected?(socket) do
       PubSub.subscribe(RealtimeGateway.PubSub, "negotiation:#{negotiation_id}")
@@ -16,6 +16,7 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
     socket =
       socket
       |> assign(:jwt, jwt)
+      |> assign(:current_user, user)
       |> assign(:user, user)
       |> assign(:negotiation_id, negotiation_id)
       |> assign(:loading, true)
@@ -127,39 +128,10 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col h-screen bg-gray-100">
-      <!-- Header -->
-      <header class="bg-white shadow flex-none z-10">
-        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <div class="flex items-center">
-            <.link navigate={~p"/dashboard"} class="mr-4 text-gray-500 hover:text-gray-700">
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </.link>
-            <div>
-              <h1 class="text-xl font-bold text-gray-900">
-                <%= if @loading, do: "Loading...", else: "Negotiation ##{@negotiation_id}" %>
-              </h1>
-              <%= unless @loading do %>
-                <p class="text-sm text-gray-500">
-                  <%= @negotiation["product"]["name"] %>
-                </p>
-              <% end %>
-            </div>
-          </div>
-          <div>
-            <%= unless @loading do %>
-              <span class={"px-2 inline-flex text-xs leading-5 font-semibold rounded-full #{status_color(@negotiation["status"])}"}>
-                <%= @negotiation["status"] %>
-              </span>
-            <% end %>
-          </div>
-        </div>
-      </header>
+    <div class="flex flex-col h-[calc(100vh-4rem)] bg-gray-100">
 
       <!-- Chat Area -->
-      <main class="flex-1 overflow-y-auto p-4" id="chat-messages" phx-hook="ScrollToBottom">
+      <div class="flex-1 overflow-y-auto p-4 space-y-4" id="messages" phx-hook="ScrollToBottom">
         <div class="max-w-3xl mx-auto space-y-4">
           <%= if @loading do %>
             <div class="text-center py-10">
@@ -189,7 +161,7 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
               </div>
             <% end %>
         </div>
-      </main>
+      </div>
 
       <!-- Input Area -->
       <footer class="bg-white border-t border-gray-200 p-4 flex-none">

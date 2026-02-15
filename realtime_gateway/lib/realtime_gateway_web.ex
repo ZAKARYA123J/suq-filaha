@@ -81,6 +81,7 @@ defmodule RealtimeGatewayWeb do
       import Phoenix.HTML
       use Gettext, backend: RealtimeGatewayWeb.Gettext
 
+      alias RealtimeGatewayWeb.Layouts
       alias Phoenix.LiveView.JS
 
       unquote(verified_routes())
