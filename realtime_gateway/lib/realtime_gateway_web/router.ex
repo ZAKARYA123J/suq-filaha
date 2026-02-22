@@ -34,10 +34,11 @@ defmodule RealtimeGatewayWeb.Router do
 
     live_session :authenticated,
       on_mount: {RealtimeGatewayWeb.LiveAuth, :require_authenticated_user} do
-      live("/dashboard", DashboardLive, :profile)
+      live("/dashboard", DashboardLive, :index)
       live("/dashboard/negotiations", DashboardLive, :negotiations)
       live("/dashboard/products", DashboardLive, :products)
       live("/products", ProductListLive, :index)
+      live("/products/:id", ProductDetailLive, :show)
       live("/negotiations/:id", NegotiationLive, :show)
     end
   end

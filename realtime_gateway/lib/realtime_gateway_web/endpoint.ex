@@ -10,11 +10,13 @@ defmodule RealtimeGatewayWeb.Endpoint do
     signing_salt: "1XpGd4Si",
     same_site: "Lax"
   ]
-    socket "/socket", RealtimeGatewayWeb.UserSocket,
- websocket: [
-    timeout: 600_000,  # 10 minutes in milliseconds
-    connect_info: [:peer_data, :x_headers]
-  ],    longpoll: false
+  socket "/socket", RealtimeGatewayWeb.UserSocket,
+    websocket: [
+      # 10 minutes in milliseconds
+      timeout: 600_000,
+      connect_info: [:peer_data, :x_headers]
+    ],
+    longpoll: false
 
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [session: @session_options]],
@@ -29,7 +31,6 @@ defmodule RealtimeGatewayWeb.Endpoint do
     from: :realtime_gateway,
     gzip: not code_reloading?,
     only: RealtimeGatewayWeb.static_paths()
-
 
   if code_reloading? do
     plug Phoenix.CodeReloader

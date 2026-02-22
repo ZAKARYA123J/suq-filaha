@@ -1,59 +1,54 @@
-// If you want to use Phoenix channels, run `mix help phx.gen.channel`
-// to get started and then uncomment the line below.
-// import "./user_socket.js"
-
-// You can include dependencies in two ways.
-//
-// The simplest option is to put them in assets/vendor and
-// import them using relative paths:
-//
-//     import "../vendor/some-package.js"
-//
-// Alternatively, you can `npm install some-package --prefix assets` and import
-// them using a path starting with the package name:
-//
-//     import "some-package"
-//
-
-// Include dependencies
+// Phoenix HTML & LiveView
 import "../css/app.css"
-
-// Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import "../../deps/phoenix_html"
 
-// Establish Phoenix Socket and LiveView configuration.
 import { Socket } from "../../deps/phoenix"
 import { LiveSocket } from "../../deps/phoenix_live_view"
-// import topbar from "../vendor/topbar"
 
-// Define Hooks
+// ── Hooks ──────────────────────────────────────────────────────────────────────
 let Hooks = {}
 
+/**
+ * ScrollToBottom – keeps the messages container scrolled to the bottom
+ * whenever new content is added or a server event fires.
+ */
 Hooks.ScrollToBottom = {
     mounted() {
-        this.el.scrollTop = this.el.scrollHeight;
+        this.scrollToBottom()
+        // Also listen for server-pushed events
+        this.handleEvent("scroll_to_bottom", () => this.scrollToBottom())
     },
     updated() {
-        this.el.scrollTop = this.el.scrollHeight;
+        this.scrollToBottom()
+    },
+    scrollToBottom() {
+        this.el.scrollTop = this.el.scrollHeight
     }
 }
 
+/**
+ * ChatInput – handles clearing the input field after a message is sent
+ * via the `clear_chat_input` server event.
+ */
+Hooks.ChatInput = {
+    mounted() {
+        this.handleEvent("clear_chat_input", () => {
+            this.el.value = ""
+            this.el.focus()
+        })
+    }
+}
+
+// ── LiveSocket setup ───────────────────────────────────────────────────────────
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+
 let liveSocket = new LiveSocket("/live", Socket, {
     params: { _csrf_token: csrfToken },
     hooks: Hooks
 })
 
-// Show progress bar on live navigation and form submits
-// topbar.config({ barColors: { 0: "#29d" }, shadowColor: "rgba(0, 0, 0, .3)" })
-// window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
-// window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
-
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
-// expose liveSocket on window for web console debug logs and latency simulation:
-// >> liveSocket.enableDebug()
-// >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
-// >> liveSocket.disableLatencySim()
+// expose liveSocket on window for web console debug logs
 window.liveSocket = liveSocket

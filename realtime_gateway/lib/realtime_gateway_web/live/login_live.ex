@@ -45,6 +45,13 @@ defmodule RealtimeGatewayWeb.LoginLive do
     ~H"""
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Work+Sans:wght@400;500;600&display=swap');
+    input:-webkit-autofill,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:hover {
+    -webkit-box-shadow: 0 0 0px 1000px var(--input-bg) inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    transition: background-color 9999s ease-in-out 0s;
+    }
 
       :root {
         --bg-gradient-start: #f5f7fa;
@@ -54,7 +61,6 @@ defmodule RealtimeGatewayWeb.LoginLive do
         --text-primary: #1a1a1a;
         --text-secondary: #5f6368;
         --label-color: #37474f;
-        --input-bg: #fafafa;
         --input-bg-focus: #ffffff;
         --input-border: #e0e0e0;
         --input-border-focus: #4caf50;
@@ -209,9 +215,7 @@ defmodule RealtimeGatewayWeb.LoginLive do
         transform: translateY(-1px);
       }
 
-      .form-input::placeholder {
-        color: var(--placeholder-color);
-      }
+    .form-input::placeholder { color: var(--placeholder-color); }
 
       .error-message {
         background: linear-gradient(135deg, var(--error-bg-start) 0%, var(--error-bg-end) 100%);
@@ -329,7 +333,7 @@ defmodule RealtimeGatewayWeb.LoginLive do
               <p class="tagline">Agricultural Market Platform</p>
             </div>
 
-            <form phx-submit="login" phx-change="validate">
+    <form phx-submit="login" phx-change="validate" autocomplete="off">
               <%= if @error do %>
                 <div class="error-message">
                   <p class="error-text">
@@ -347,7 +351,7 @@ defmodule RealtimeGatewayWeb.LoginLive do
                   id="phone"
                   name="phone"
                   type="tel"
-                  value={@phone}
+
                   required
                   class="form-input"
                   placeholder="+212 600 000 000"
@@ -361,11 +365,12 @@ defmodule RealtimeGatewayWeb.LoginLive do
                   id="password"
                   name="password"
                   type="password"
-                  value={@password}
                   required
+
                   class="form-input"
                   placeholder="Enter your password"
-                  autocomplete="current-password"
+                 autocomplete="new-password"
+    autocomplete="off"
                 />
               </div>
 

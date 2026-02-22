@@ -9,10 +9,11 @@ defmodule RealtimeGatewayWeb.EventsChannel do
       {:error, %{reason: "unauthorized"}}
     end
   end
-    def join("events:" <> _room, _payload, socket) do
+
+  def join("events:" <> _room, _payload, socket) do
     IO.puts("DEBUG: Joined events channel successfully")
     {:ok, socket}
-   end
+  end
 
   # Channels can be used in a request/response fashion
   # by sending replies to requests from the client

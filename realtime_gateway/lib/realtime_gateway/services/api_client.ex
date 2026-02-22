@@ -117,6 +117,20 @@ defmodule RealtimeGateway.Services.ApiClient do
   end
 
   @doc """
+  Fetch messages for a negotiation.
+  """
+  def get_negotiation_messages(jwt, negotiation_id) do
+    get("/api/negotiations/#{negotiation_id}/messages", jwt)
+  end
+
+  @doc """
+  Get farmer dashboard stats (product count, negotiations, revenue).
+  """
+  def get_farmer_stats(jwt) do
+    get("/api/users/stats", jwt)
+  end
+
+  @doc """
   Send message in negotiation.
   """
   def send_negotiation_message(jwt, negotiation_id, content) do
@@ -127,7 +141,7 @@ defmodule RealtimeGateway.Services.ApiClient do
   Update negotiation status (ACCEPTED, REJECTED, CANCELLED).
   """
   def update_negotiation_status(jwt, negotiation_id, status) do
-    patch("/api/negotiations/#{negotiation_id}", jwt, %{status: status})
+    patch("/api/negotiations/#{negotiation_id}/status", jwt, %{status: status})
   end
 
   # Private helper functions

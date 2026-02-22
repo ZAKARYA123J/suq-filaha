@@ -1,0 +1,312 @@
+<%!-- Full Navbar --%>
+<div class="min-h-screen bg-gray-50">
+  <RealtimeGatewayWeb.Layouts.navbar profile={@profile} active_tab={if @live_action == :index, do: :dashboard, else: @live_action} notifications={@notifications} />
+
+  <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6">
+
+    <%!-- ── DASHBOARD TAB ── --%>
+    <%= if @live_action == :index do %>
+
+      <%!-- Stats (Farmer only) --%>
+      <%= if @profile && @profile["userType"] == "FARMER" do %>
+        <div>
+          <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Farm Overview</h3>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <%= for {label, key, icon_color, icon_path} <- [
+              {"Products",     "productCount",     "emerald", "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"},
+              {"Negotiations", "negotiationCount", "blue",    "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"},
+              {"Closed Deals", "acceptedCount",    "green",   "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"},
+              {"Rating",       "rating",           "amber",   "M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"}
+            ] do %>
+              <div class="bg-white rounded-xl ring-1 ring-gray-200 shadow-sm p-5 flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide"><%= label %></span>
+                  <div class={"h-8 w-8 rounded-lg bg-#{icon_color}-50 flex items-center justify-center"}>
+                    <svg class={"h-4 w-4 text-#{icon_color}-600"} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={icon_path}/>
+                    </svg>
+                  </div>
+                </div>
+                <p class="text-3xl font-bold text-gray-900"><%= (@stats && @stats[key]) || "—" %></p>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+        <%!-- Latest Negotiation --%>
+        <%= if length(@negotiations) > 0 do %>
+          <% latest_neg = hd(@negotiations) %>
+          <div>
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-4">Latest Negotiation</h3>
+            <div class="bg-white rounded-xl ring-1 ring-gray-200 shadow-sm overflow-hidden">
+              <.link navigate={~p"/negotiations/#{latest_neg["id"]}"} class="block hover:bg-gray-50 px-6 py-4 transition">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-gray-900 truncate"><%= latest_neg["product"]["name"] %></p>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                      Offer: <strong><%= latest_neg["proposedPrice"] %> MAD</strong> · Listed: <strong><%= latest_neg["product"]["price"] %> MAD</strong>
+                    </p>
+                  </div>
+                  <span class={"flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold #{RealtimeGatewayWeb.DashboardLive.status_color(latest_neg["status"])}"}>
+                    <%= latest_neg["status"] %>
+                  </span>
+                </div>
+              </.link>
+            </div>
+          </div>
+        <% else %>
+          <div>
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-4">Latest Negotiation</h3>
+            <div class="bg-white rounded-xl ring-1 ring-gray-200 shadow-sm px-6 py-6 text-center">
+              <p class="text-sm text-gray-500">No active negotiations.</p>
+            </div>
+          </div>
+        <% end %>
+
+        <%!-- Quick links --%>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <.link navigate={~p"/dashboard/products"} class="group bg-white rounded-xl ring-1 ring-gray-200 p-5 flex items-center gap-4 hover:ring-green-300 hover:shadow-md transition">
+            <div class="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center group-hover:bg-green-200 transition">
+              <svg class="h-5 w-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+            </div>
+            <div><p class="text-sm font-semibold text-gray-900">Manage Products</p><p class="text-xs text-gray-500 mt-0.5">Add, edit, or remove listings</p></div>
+            <svg class="h-4 w-4 text-gray-300 ml-auto group-hover:text-green-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </.link>
+          <.link navigate={~p"/dashboard/negotiations"} class="group bg-white rounded-xl ring-1 ring-gray-200 p-5 flex items-center gap-4 hover:ring-blue-300 hover:shadow-md transition">
+            <div class="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
+              <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+            </div>
+            <div><p class="text-sm font-semibold text-gray-900">View Negotiations</p><p class="text-xs text-gray-500 mt-0.5">Respond to buyer offers</p></div>
+            <svg class="h-4 w-4 text-gray-300 ml-auto group-hover:text-blue-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </.link>
+        </div>
+      <% else %>
+        <%!-- Buyer/Other User Dashboard --%>
+        <%= if length(@negotiations) > 0 do %>
+          <% latest_neg = hd(@negotiations) %>
+          <div>
+            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Latest Negotiation</h3>
+            <div class="bg-white rounded-xl ring-1 ring-gray-200 shadow-sm overflow-hidden">
+              <.link navigate={~p"/negotiations/#{latest_neg["id"]}"} class="block hover:bg-gray-50 px-6 py-4 transition">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-gray-900 truncate"><%= latest_neg["product"]["name"] %></p>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                      Offer: <strong><%= latest_neg["proposedPrice"] %> MAD</strong> · Listed: <strong><%= latest_neg["product"]["price"] %> MAD</strong>
+                    </p>
+                  </div>
+                  <span class={"flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold #{RealtimeGatewayWeb.DashboardLive.status_color(latest_neg["status"])}"}>
+                    <%= latest_neg["status"] %>
+                  </span>
+                </div>
+              </.link>
+            </div>
+          </div>
+        <% else %>
+          <div class="bg-white rounded-xl ring-1 ring-gray-200 shadow-sm px-6 py-12 text-center">
+            <p class="text-sm text-gray-500">No active negotiations.</p>
+            <.link navigate={~p"/products"} class="mt-2 inline-block text-xs font-medium text-green-600 hover:text-green-700">Browse marketplace →</.link>
+          </div>
+        <% end %>
+      <% end %>
+    <% end %>
+
+    <%!-- ── NEGOTIATIONS TAB ── --%>
+    <%= if @live_action == :negotiations do %>
+      <div class="bg-white shadow-sm ring-1 ring-gray-200 sm:rounded-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+          <h3 class="text-base font-semibold text-gray-900">My Negotiations</h3>
+          <p class="text-sm text-gray-500 mt-0.5">Offers on your products or ones you've made.</p>
+        </div>
+        <ul role="list" class="divide-y divide-gray-100">
+          <%= for neg <- @negotiations do %>
+            <li>
+              <.link navigate={~p"/negotiations/#{neg["id"]}"} class="block hover:bg-gray-50 px-6 py-4 transition">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-gray-900 truncate"><%= neg["product"]["name"] %></p>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                      Offer: <strong><%= neg["proposedPrice"] %> MAD</strong> · Listed: <strong><%= neg["product"]["price"] %> MAD</strong>
+                    </p>
+                  </div>
+                  <span class={"flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold #{RealtimeGatewayWeb.DashboardLive.status_color(neg["status"])}"}>
+                    <%= neg["status"] %>
+                  </span>
+                </div>
+              </.link>
+            </li>
+          <% end %>
+          <%= if Enum.empty?(@negotiations) do %>
+            <li class="px-6 py-12 text-center">
+              <p class="text-sm text-gray-500">No negotiations found.</p>
+              <.link navigate={~p"/products"} class="mt-1 inline-block text-xs text-green-600 hover:underline">Browse products →</.link>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%!-- ── PRODUCTS TAB ── --%>
+    <%= if @live_action == :products do %>
+      <%= if @profile && @profile["userType"] == "FARMER" do %>
+        <div class="bg-white shadow-sm ring-1 ring-gray-200 sm:rounded-xl overflow-hidden">
+          <div class="px-6 py-4 flex justify-between items-center border-b border-gray-100 bg-gray-50">
+            <div>
+              <h3 class="text-base font-semibold text-gray-900">My Products</h3>
+              <p class="text-sm text-gray-500 mt-0.5">Manage the items you sell.</p>
+            </div>
+            <button phx-click="open_modal" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition flex items-center gap-1.5">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+              Add Product
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+              <thead class="bg-gray-50 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <tr>
+                  <th class="px-6 py-3 text-left">Image</th>
+                  <th class="px-6 py-3 text-left">Name</th>
+                  <th class="px-6 py-3 text-left">Category</th>
+                  <th class="px-6 py-3 text-left">Price</th>
+                  <th class="px-6 py-3 text-left">Qty</th>
+                  <th class="px-6 py-3 text-left">Status</th>
+                  <th class="px-6 py-3"></th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-100">
+                <%= for p <- @displayed_products do %>
+                  <tr class="hover:bg-gray-50 transition group">
+                    <td class="px-6 py-4">
+                      <%= if p["images"] && length(p["images"]) > 0 do %>
+                        <img src={hd(p["images"])} class="h-10 w-10 rounded-lg object-cover shadow-sm group-hover:shadow-md transition" />
+                      <% else %>
+                        <div class="h-10 w-10 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center">
+                          <svg class="h-5 w-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        </div>
+                      <% end %>
+                    </td>
+                    <td class="px-6 py-4 text-sm font-bold text-gray-900">
+                       <.link navigate={~p"/products/#{p["id"]}"} class="hover:text-green-600 transition"><%= p["name"] %></.link>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500"><%= p["category"] %></td>
+                    <td class="px-6 py-4 text-sm text-gray-700 font-medium"><%= p["price"] %> MAD</td>
+                    <td class="px-6 py-4 text-sm text-gray-500"><%= p["quantity"] %> <%= p["unit"] %></td>
+                    <td class="px-6 py-4">
+                      <span class={"px-2 py-0.5 text-xs font-semibold rounded-full #{if p["isAvailable"], do: "bg-green-100 text-green-800", else: "bg-red-100 text-red-800"}"}>
+                        <%= if p["isAvailable"], do: "Available", else: "Sold Out" %>
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 text-right text-sm">
+                      <button phx-click="open_modal" phx-value-id={p["id"]} class="text-indigo-600 hover:text-indigo-900 font-semibold mr-4">Edit</button>
+                      <button phx-click="delete_product" phx-value-id={p["id"]} data-confirm="Delete this product?" class="text-red-500 hover:text-red-700 font-semibold">Delete</button>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+            <%!-- Pagination Controls --%>
+            <%= if @products_total_pages > 1 do %>
+              <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-center gap-2 bg-gray-50">
+                <button phx-click="change_products_page" phx-value-page={@products_page - 1} disabled={@products_page == 1} class="p-2 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <div class="flex items-center gap-1">
+                  <%= for p <- max(1, @products_page - 2)..min(@products_total_pages, @products_page + 2) do %>
+                    <button phx-click="change_products_page" phx-value-page={p} class={"w-8 h-8 rounded-lg text-sm font-semibold transition #{if p == @products_page, do: "bg-green-600 text-white shadow-sm ring-1 ring-green-600", else: "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"}"}>
+                      <%= p %>
+                    </button>
+                  <% end %>
+                </div>
+                <button phx-click="change_products_page" phx-value-page={@products_page + 1} disabled={@products_page == @products_total_pages} class="p-2 rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            <% end %>
+
+            <%= if Enum.empty?(@products) do %>
+              <div class="p-12 text-center">
+                <p class="text-sm text-gray-500">No products yet.</p>
+                <button phx-click="open_modal" class="mt-2 text-xs text-green-600 hover:underline">+ Add your first product</button>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+
+  </main>
+
+  <%!-- ── PRODUCT MODAL ── --%>
+  <%= if @live_action == :products && @show_modal do %>
+    <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+      <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm" phx-click="close_modal"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-gray-900">
+              <%= if @editing_product, do: "Edit Product", else: "Add New Product" %>
+            </h3>
+            <button phx-click="close_modal" class="text-gray-400 hover:text-gray-600">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="px-6 py-5">
+            <.form for={@form} phx-submit="save_product" phx-change="validate" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Name</label>
+                <input type="text" name="name" value={@form[:name].value} required class="mt-1 block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"/>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Category</label>
+                  <select name="category" class="mt-1 block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500">
+                    <%= for cat <- ~w(Vegetables Fruits Grains Dairy Seeds Equipment) do %>
+                      <option value={cat} selected={@form[:category].value == cat}><%= cat %></option>
+                    <% end %>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Price (MAD)</label>
+                  <input type="number" step="0.01" name="price" value={@form[:price].value} required class="mt-1 block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500"/>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Quantity</label>
+                  <input type="number" step="0.01" name="quantity" value={@form[:quantity].value} required class="mt-1 block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500"/>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700">Unit</label>
+                  <input type="text" name="unit" value={@form[:unit].value || "kg"} placeholder="kg, piece…" class="mt-1 block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500"/>
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Description</label>
+                <textarea name="description" rows="2" class="mt-1 block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500"><%= @form[:description].value %></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Harvest Date</label>
+                <input type="date" name="harvestDate" value={@form[:harvestDate].value} class="mt-1 block w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500"/>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Images (Max 5)</label>
+                <div class="mt-1 flex justify-center px-6 pt-4 pb-4 border-2 border-dashed border-gray-200 rounded-lg hover:border-green-400 transition text-center">
+                  <.live_file_input upload={@uploads.images} />
+                </div>
+                <%= for entry <- @uploads.images.entries do %>
+                  <p class="text-xs text-gray-400 mt-1">✓ <%= entry.client_name %> (<%= entry.progress %>%)</p>
+                <% end %>
+              </div>
+              <div class="flex justify-end gap-3 pt-3 border-t border-gray-100">
+                <button type="button" phx-click="close_modal" class="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 shadow-sm">
+                  <%= if @editing_product, do: "Save Changes", else: "Add Product" %>
+                </button>
+              </div>
+            </.form>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

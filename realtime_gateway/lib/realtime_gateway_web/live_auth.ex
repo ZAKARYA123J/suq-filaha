@@ -21,7 +21,8 @@ defmodule RealtimeGatewayWeb.LiveAuth do
         {:cont,
          socket
          |> assign(:current_user, user)
-         |> assign(:jwt, jwt)}
+         |> assign(:jwt, jwt)
+         |> load_notifications(jwt)}
 
       {:error, _reason} ->
         {:halt,
@@ -37,7 +38,8 @@ defmodule RealtimeGatewayWeb.LiveAuth do
         {:cont,
          socket
          |> assign(:current_user, user)
-         |> assign(:jwt, jwt)}
+         |> assign(:jwt, jwt)
+         |> load_notifications(jwt)}
 
       {:ok, _user, _jwt} ->
         {:halt,
@@ -59,7 +61,8 @@ defmodule RealtimeGatewayWeb.LiveAuth do
         {:cont,
          socket
          |> assign(:current_user, user)
-         |> assign(:jwt, jwt)}
+         |> assign(:jwt, jwt)
+         |> load_notifications(jwt)}
 
       {:ok, _user, _jwt} ->
         {:halt,
@@ -82,6 +85,17 @@ defmodule RealtimeGatewayWeb.LiveAuth do
       {:ok, user, jwt}
     else
       _ -> {:error, :unauthorized}
+    end
+  end
+
+  defp load_notifications(socket, jwt) do
+    case RealtimeGateway.Services.ApiClient.get_negotiations(jwt) do
+      {:ok, negotiations} ->
+        pending = Enum.filter(negotiations, fn neg -> neg["status"] == "PENDING" end)
+        assign(socket, :notifications, pending)
+
+      _ ->
+        assign(socket, :notifications, [])
     end
   end
 end

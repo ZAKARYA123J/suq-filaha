@@ -14,6 +14,7 @@ defmodule RealtimeGatewayWeb.Presence do
   def track_user(socket, negotiation_id, user_metadata \\ %{}) do
     user_id = socket.assigns.userId
     pid = socket.channel_pid || self()
+
     default_metadata = %{
       userId: user_id,
       name: socket.assigns.name,
@@ -27,6 +28,7 @@ defmodule RealtimeGatewayWeb.Presence do
       {:ok, _} ->
         Logger.info("User #{user_id} tracked in negotiation #{negotiation_id}")
         :ok
+
       {:error, reason} ->
         Logger.error("Failed to track user #{user_id}: #{inspect(reason)}")
         {:error, reason}
@@ -94,6 +96,7 @@ defmodule RealtimeGatewayWeb.Presence do
     case get_online_users(negotiation_id) do
       {:ok, users} ->
         Enum.any?(users, &(&1.userId == user_id))
+
       {:error, _} ->
         false
     end
@@ -107,11 +110,13 @@ defmodule RealtimeGatewayWeb.Presence do
       {:ok, online_users} ->
         online_user_ids = Enum.map(online_users, & &1.userId)
 
-        offline_users = []
-        |> maybe_add_offline_user(buyer_id, online_user_ids, "BUYER")
-        |> maybe_add_offline_user(farmer_id, online_user_ids, "FARMER")
+        offline_users =
+          []
+          |> maybe_add_offline_user(buyer_id, online_user_ids, "BUYER")
+          |> maybe_add_offline_user(farmer_id, online_user_ids, "FARMER")
 
         {:ok, offline_users}
+
       {:error, _} ->
         # If we can't determine online users, assume both are offline
         {:ok, [%{userId: buyer_id, userType: "BUYER"}, %{userId: farmer_id, userType: "FARMER"}]}

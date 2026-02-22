@@ -4,33 +4,37 @@ defmodule RealtimeGatewayWeb.NegotiationChannel do
 
   @backend_api_url System.get_env("BACKEND_API_URL", "http://localhost:3000")
 
- def join("negotiation:" <> negotiation_id, _params, socket) do
-  user_id = socket.assigns.userId
-  token = Map.get(socket.assigns, :token)
-  Logger.info("User #{user_id} attempting to join negotiation: #{negotiation_id}")
+  def join("negotiation:" <> negotiation_id, _params, socket) do
+    user_id = socket.assigns.userId
+    token = Map.get(socket.assigns, :token)
+    Logger.info("User #{user_id} attempting to join negotiation: #{negotiation_id}")
 
-  case verify_negotiation_access(user_id, token, negotiation_id) do
-    {:ok, negotiation} ->
-      # Allow access to all statuses except REJECTED
-      # if negotiation["status"] != "REJECTED" do
-      #   Logger.info("User #{user_id} authorized for negotiation: #{negotiation_id}")
+    case verify_negotiation_access(user_id, token, negotiation_id) do
+      {:ok, negotiation} ->
+        # Allow access to all statuses except REJECTED
+        # if negotiation["status"] != "REJECTED" do
+        #   Logger.info("User #{user_id} authorized for negotiation: #{negotiation_id}")
 
-
-      # else
-      #   Logger.warning("Negotiation #{negotiation_id} is rejected")
-      #   {:error, %{reason: "Negotiation has been rejected"}}
-      # end
-   socket = socket
-        |> assign(:negotiation_id, negotiation_id)
-        |> assign(:negotiation, negotiation)
+        # else
+        #   Logger.warning("Negotiation #{negotiation_id} is rejected")
+        #   {:error, %{reason: "Negotiation has been rejected"}}
+        # end
+        socket =
+          socket
+          |> assign(:negotiation_id, negotiation_id)
+          |> assign(:negotiation, negotiation)
 
         send(self(), :after_join)
         {:ok, socket}
-    {:error, reason} ->
-      Logger.warning("User #{user_id} denied access to negotiation #{negotiation_id}: #{reason}")
-      {:error, %{reason: reason}}
+
+      {:error, reason} ->
+        Logger.warning(
+          "User #{user_id} denied access to negotiation #{negotiation_id}: #{reason}"
+        )
+
+        {:error, %{reason: reason}}
+    end
   end
-end
 
   def handle_info(:after_join, socket) do
     user_id = socket.assigns.userId
@@ -44,6 +48,7 @@ end
     case load_previous_messages(negotiation_id, token) do
       {:ok, messages} ->
         push(socket, "previous_messages", %{messages: messages})
+
       {:error, reason} ->
         Logger.error("Failed to load previous messages: #{reason}")
     end
@@ -54,10 +59,17 @@ end
         push(socket, "queued_messages", %{messages: queued_messages})
         # Mark queued messages as delivered
         message_ids = Enum.map(queued_messages, & &1.id)
-        RealtimeGateway.OfflineMessageQueue.mark_messages_delivered(negotiation_id, user_id, message_ids)
+
+        RealtimeGateway.OfflineMessageQueue.mark_messages_delivered(
+          negotiation_id,
+          user_id,
+          message_ids
+        )
+
       {:ok, []} ->
         # No queued messages
         :ok
+
       {:error, reason} ->
         Logger.error("Failed to get queued messages: #{reason}")
     end
@@ -72,84 +84,87 @@ end
     {:noreply, socket}
   end
 
- def handle_in("new_message", %{"content" => content}, socket) do
-  user_id = socket.assigns.userId
-  negotiation_id = socket.assigns.negotiation_id
-  token = Map.get(socket.assigns, :token)
-  negotiation = socket.assigns.negotiation
+  def handle_in("new_message", %{"content" => content}, socket) do
+    user_id = socket.assigns.userId
+    negotiation_id = socket.assigns.negotiation_id
+    token = Map.get(socket.assigns, :token)
+    negotiation = socket.assigns.negotiation
 
-  # Check if negotiation is not REJECTED
-  if negotiation["status"] == "REJECTED" do
-    {:reply, {:error, %{reason: "Cannot send messages. Negotiation has been rejected"}}, socket}
-  else
-    user_type = get_user_type(user_id, negotiation)
+    # Check if negotiation is not REJECTED
+    if negotiation["status"] == "REJECTED" do
+      {:reply, {:error, %{reason: "Cannot send messages. Negotiation has been rejected"}}, socket}
+    else
+      user_type = get_user_type(user_id, negotiation)
 
-    # First persist message via Node.js API
-    case create_message_api(token, negotiation_id, content, user_id, user_type) do
-      {:ok, persisted_message} ->
-        message = %{
-          id: persisted_message["id"],
-          content: content,
-          senderId: user_id,
-          senderType: user_type,
-          createdAt: persisted_message["createdAt"] || DateTime.utc_now()
-        }
+      # First persist message via Node.js API
+      case create_message_api(token, negotiation_id, content, user_id, user_type) do
+        {:ok, persisted_message} ->
+          message = %{
+            id: persisted_message["id"],
+            content: content,
+            senderId: user_id,
+            senderType: user_type,
+            createdAt: persisted_message["createdAt"] || DateTime.utc_now()
+          }
 
-        broadcast(socket, "new_message", message)
+          broadcast(socket, "new_message", message)
 
-        queue_message_for_offline_users(socket.assigns.negotiation, negotiation_id, message)
+          queue_message_for_offline_users(socket.assigns.negotiation, negotiation_id, message)
 
-        {:reply, {:ok, message}, socket}
+          {:reply, {:ok, message}, socket}
 
-      {:error, reason} ->
-        Logger.error("Failed to persist message: #{reason}")
-        {:reply, {:error, %{reason: "Failed to save message"}}, socket}
+        {:error, reason} ->
+          Logger.error("Failed to persist message: #{reason}")
+          {:reply, {:error, %{reason: "Failed to save message"}}, socket}
+      end
     end
   end
-end
 
-def handle_in("end_negotiation", %{"status" => status}, socket) when status in ["REJECTED", "CANCELLED", "EXPIRED"] do
-  user_id = socket.assigns.userId
-  negotiation_id = socket.assigns.negotiation_id
-  token = Map.get(socket.assigns, :token)
+  def handle_in("end_negotiation", %{"status" => status}, socket)
+      when status in ["REJECTED", "CANCELLED", "EXPIRED"] do
+    user_id = socket.assigns.userId
+    negotiation_id = socket.assigns.negotiation_id
+    token = Map.get(socket.assigns, :token)
 
-  # Update negotiation status via API
-  case update_negotiation_status_api(token, negotiation_id, status) do
-    {:ok, updated_negotiation} ->
-      # Update socket with new negotiation state
-      socket = assign(socket, :negotiation, updated_negotiation)
+    # Update negotiation status via API
+    case update_negotiation_status_api(token, negotiation_id, status) do
+      {:ok, updated_negotiation} ->
+        # Update socket with new negotiation state
+        socket = assign(socket, :negotiation, updated_negotiation)
 
-      broadcast(socket, "negotiation_ended", %{
-        negotiationId: negotiation_id,
-        status: status,
-        endedBy: user_id,
-        endedAt: DateTime.utc_now()
-      })
+        broadcast(socket, "negotiation_ended", %{
+          negotiationId: negotiation_id,
+          status: status,
+          endedBy: user_id,
+          endedAt: DateTime.utc_now()
+        })
 
-      {:reply, {:ok, %{status: status}}, socket}
+        {:reply, {:ok, %{status: status}}, socket}
 
-    {:error, reason} ->
-      Logger.error("Failed to end negotiation: #{reason}")
-      {:reply, {:error, %{reason: "Failed to end negotiation"}}, socket}
+      {:error, reason} ->
+        Logger.error("Failed to end negotiation: #{reason}")
+        {:reply, {:error, %{reason: "Failed to end negotiation"}}, socket}
+    end
   end
-end
 
-def handle_in("end_negotiation", %{"status" => invalid_status}, socket) do
-  {:reply, {:error, %{reason: "Invalid status: #{invalid_status}"}}, socket}
-end
-def handle_in("typing", %{"typing" => is_typing}, socket) do
-  user_id = socket.assigns.userId
-  negotiation_id = socket.assigns.negotiation_id
+  def handle_in("end_negotiation", %{"status" => invalid_status}, socket) do
+    {:reply, {:error, %{reason: "Invalid status: #{invalid_status}"}}, socket}
+  end
 
-  # Broadcast typing status to other users
-  broadcast_from(socket, "user_typing", %{
-    userId: user_id,
-    negotiationId: negotiation_id,
-    typing: is_typing
-  })
+  def handle_in("typing", %{"typing" => is_typing}, socket) do
+    user_id = socket.assigns.userId
+    negotiation_id = socket.assigns.negotiation_id
 
-  {:noreply, socket}
-end
+    # Broadcast typing status to other users
+    broadcast_from(socket, "user_typing", %{
+      userId: user_id,
+      negotiationId: negotiation_id,
+      typing: is_typing
+    })
+
+    {:noreply, socket}
+  end
+
   def terminate(_reason, socket) do
     user_id = socket.assigns.userId
     negotiation_id = socket.assigns.negotiation_id
@@ -165,7 +180,6 @@ end
 
     :ok
   end
-
 
   defp verify_negotiation_access(user_id, token, negotiation_id) do
     with {:ok, token} <- require_token(token),
@@ -250,7 +264,10 @@ end
           {:error, "Unauthorized"}
 
         %{status: status, body: body} ->
-          Logger.error("Unexpected create message response: status=#{status} body=#{inspect(body)}")
+          Logger.error(
+            "Unexpected create message response: status=#{status} body=#{inspect(body)}"
+          )
+
           {:error, "Failed to create message"}
       end
     else
@@ -262,7 +279,8 @@ end
 
   defp update_negotiation_status_api(token, negotiation_id, status) do
     with {:ok, token} <- require_token(token),
-         {:ok, resp} <- api_patch("/api/negotiations/#{negotiation_id}/status", token, %{"status" => status}) do
+         {:ok, resp} <-
+           api_patch("/api/negotiations/#{negotiation_id}/status", token, %{"status" => status}) do
       case resp do
         %{status: 200, body: negotiation} when is_map(negotiation) ->
           {:ok, negotiation}
@@ -300,7 +318,12 @@ end
       buyer_id = negotiation["buyerId"]
       farmer_id = negotiation["farmerId"]
 
-      RealtimeGateway.OfflineMessageQueue.queue_message(negotiation_id, message, buyer_id, farmer_id)
+      RealtimeGateway.OfflineMessageQueue.queue_message(
+        negotiation_id,
+        message,
+        buyer_id,
+        farmer_id
+      )
     else
       Logger.error("Failed to queue message: negotiation missing on socket")
     end

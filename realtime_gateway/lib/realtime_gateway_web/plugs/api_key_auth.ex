@@ -1,4 +1,5 @@
-defmodule RealtimeGatewayWeb.Plugs.ApiKeyAuth do  # Changed ApikeyAuth to ApiKeyAuth
+# Changed ApikeyAuth to ApiKeyAuth
+defmodule RealtimeGatewayWeb.Plugs.ApiKeyAuth do
   import Plug.Conn
   import Phoenix.Controller
   require Logger
@@ -13,6 +14,7 @@ defmodule RealtimeGatewayWeb.Plugs.ApiKeyAuth do  # Changed ApikeyAuth to ApiKey
       conn
     else
       Logger.warning("Invalid api key from #{get_peer_ip(conn)}")
+
       conn
       |> put_status(:unauthorized)
       |> json(%{error: "Invalid api key"})

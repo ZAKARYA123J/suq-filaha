@@ -55,10 +55,12 @@ defmodule RealtimeGateway.OfflineMessageQueue do
     # In a production app, you'd use a proper database like Redis or ETS
     # For now, we'll use an in-memory state
     state = %{
-      message_queues: %{}, # %{negotiation_id => %{user_id => [messages]}}
-      delivery_status: %{} # %{negotiation_id => %{user_id => %{message_id => delivered}}}
+      # %{negotiation_id => %{user_id => [messages]}}
+      message_queues: %{},
+      # %{negotiation_id => %{user_id => %{message_id => delivered}}}
+      delivery_status: %{}
     }
-    
+
     {:ok, state}
   end
 
@@ -68,7 +70,7 @@ defmodule RealtimeGateway.OfflineMessageQueue do
       {:ok, offline_users} ->
         new_state = queue_for_users(state, negotiation_id, message, offline_users)
         {:reply, :ok, new_state}
-        
+
       {:error, reason} ->
         Logger.error("Failed to get offline users: #{reason}")
         # Queue for both users if we can't determine who's offline
@@ -100,19 +102,19 @@ defmodule RealtimeGateway.OfflineMessageQueue do
   @impl true
   def handle_cast({:deliver_messages, negotiation_id, user_id}, state) do
     Logger.info("Delivering queued messages for user #{user_id} in negotiation #{negotiation_id}")
-    
+
     messages = get_user_messages(state, negotiation_id, user_id)
-    
+
     if length(messages) > 0 do
       # In a real implementation, you would push these messages to the user's socket
       # For now, we'll just log and mark them as delivered
       message_ids = Enum.map(messages, & &1.id)
-      
+
       Logger.info("Delivering #{length(messages)} queued messages to user #{user_id}")
-      
+
       # You would typically use Phoenix.PubSub to push to the user's socket
       # RealtimeGatewayWeb.Endpoint.broadcast!("user:#{user_id}", "queued_messages", %{messages: messages})
-      
+
       new_state = mark_as_delivered(state, negotiation_id, user_id, message_ids)
       {:noreply, new_state}
     else
@@ -124,36 +126,39 @@ defmodule RealtimeGateway.OfflineMessageQueue do
 
   defp queue_for_users(state, negotiation_id, message, users) do
     negotiation_queues = Map.get(state.message_queues, negotiation_id, %{})
-    
-    updated_queues = Enum.reduce(users, negotiation_queues, fn user, acc ->
-      user_id = user.userId
-      user_messages = Map.get(acc, user_id, [])
-      
-      # Check if message is already queued for this user
-      message_already_queued = Enum.any?(user_messages, &(&1.id == message.id))
-      
-      if message_already_queued do
-        acc
-      else
-        queued_message = Map.put(message, :queuedAt, DateTime.utc_now())
-        Map.put(acc, user_id, [queued_message | user_messages])
-      end
-    end)
-    
+
+    updated_queues =
+      Enum.reduce(users, negotiation_queues, fn user, acc ->
+        user_id = user.userId
+        user_messages = Map.get(acc, user_id, [])
+
+        # Check if message is already queued for this user
+        message_already_queued = Enum.any?(user_messages, &(&1.id == message.id))
+
+        if message_already_queued do
+          acc
+        else
+          queued_message = Map.put(message, :queuedAt, DateTime.utc_now())
+          Map.put(acc, user_id, [queued_message | user_messages])
+        end
+      end)
+
     updated_state = put_in(state.message_queues[negotiation_id], updated_queues)
-    
-    Logger.info("Queued message #{message.id} for #{length(users)} offline users in negotiation #{negotiation_id}")
-    
+
+    Logger.info(
+      "Queued message #{message.id} for #{length(users)} offline users in negotiation #{negotiation_id}"
+    )
+
     updated_state
   end
 
   defp get_user_messages(state, negotiation_id, user_id) do
     negotiation_queues = Map.get(state.message_queues, negotiation_id, %{})
     user_messages = Map.get(negotiation_queues, user_id, [])
-    
+
     # Filter out already delivered messages
     delivery_statuses = get_in(state.delivery_status, [negotiation_id, user_id]) || %{}
-    
+
     Enum.filter(user_messages, fn message ->
       Map.get(delivery_statuses, message.id) != true
     end)
@@ -161,15 +166,16 @@ defmodule RealtimeGateway.OfflineMessageQueue do
 
   defp mark_as_delivered(state, negotiation_id, user_id, message_ids) do
     delivery_statuses = get_in(state.delivery_status, [negotiation_id, user_id]) || %{}
-    
-    updated_statuses = Enum.reduce(message_ids, delivery_statuses, fn message_id, acc ->
-      Map.put(acc, message_id, true)
-    end)
-    
+
+    updated_statuses =
+      Enum.reduce(message_ids, delivery_statuses, fn message_id, acc ->
+        Map.put(acc, message_id, true)
+      end)
+
     updated_state = put_in(state.delivery_status[negotiation_id][user_id], updated_statuses)
-    
+
     Logger.info("Marked #{length(message_ids)} messages as delivered for user #{user_id}")
-    
+
     updated_state
   end
 
