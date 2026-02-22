@@ -33,35 +33,68 @@
           </div>
         </div>
 
-        <%!-- Latest Negotiation --%>
-        <%= if length(@negotiations) > 0 do %>
-          <% latest_neg = hd(@negotiations) %>
-          <div>
-            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-4">Latest Negotiation</h3>
-            <div class="bg-white rounded-xl ring-1 ring-gray-200 shadow-sm overflow-hidden">
-              <.link navigate={~p"/negotiations/#{latest_neg["id"]}"} class="block hover:bg-gray-50 px-6 py-4 transition">
-                <div class="flex items-center justify-between gap-4">
-                  <div class="min-w-0">
-                    <p class="text-sm font-semibold text-gray-900 truncate"><%= latest_neg["product"]["name"] %></p>
-                    <p class="text-xs text-gray-500 mt-0.5">
-                      Offer: <strong><%= latest_neg["proposedPrice"] %> MAD</strong> · Listed: <strong><%= latest_neg["product"]["price"] %> MAD</strong>
-                    </p>
-                  </div>
-                  <span class={"flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold #{RealtimeGatewayWeb.DashboardLive.status_color(latest_neg["status"])}"}>
-                    <%= latest_neg["status"] %>
-                  </span>
-                </div>
-              </.link>
-            </div>
-          </div>
-        <% else %>
-          <div>
-            <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-4">Latest Negotiation</h3>
-            <div class="bg-white rounded-xl ring-1 ring-gray-200 shadow-sm px-6 py-6 text-center">
-              <p class="text-sm text-gray-500">No active negotiations.</p>
-            </div>
-          </div>
-        <% end %>
+   <%!-- Latest Negotiation (reusable block) --%>
+<%= if length(@negotiations) > 0 do %>
+  <% latest_neg = hd(@negotiations) %>
+  <%
+    other =
+      if @profile && @profile["id"] == latest_neg["farmerId"],
+        do: latest_neg["buyer"],
+        else: latest_neg["farmer"]
+
+    other_avatar =
+      case other && other["profileInfo"] do
+        info when is_map(info) ->
+          info["avatarUrl"] || info["avatar"] || info["profilePicture"] ||
+            info["imageUrl"] || info["photo"]
+        info when is_binary(info) -> info
+        _ -> nil
+      end
+
+    other_initial =
+      (other && other["name"] && String.upcase(String.first(String.trim(other["name"])))) || "?"
+  %>
+  <div>
+    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-4">Latest Negotiation</h3>
+    <div class="bg-white rounded-xl ring-1 ring-gray-200 shadow-sm overflow-hidden">
+      <.link navigate={~p"/negotiations/#{latest_neg["id"]}"} class="flex items-center gap-4 hover:bg-gray-50 px-6 py-4 transition">
+
+        <div class="flex-none w-10 h-10 rounded-full overflow-hidden bg-green-100 flex items-center justify-center ring-1 ring-gray-200">
+          <%= if other_avatar do %>
+            <img src={other_avatar} class="w-full h-full object-cover" alt={other && other["name"]} />
+          <% else %>
+            <span class="text-sm font-bold text-green-700"><%= other_initial %></span>
+          <% end %>
+        </div>
+
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-gray-900 truncate"><%= latest_neg["product"]["name"] %></p>
+          <p class="text-xs text-gray-500 mt-0.5">
+            <span class="font-medium text-gray-700"><%= other && other["name"] %></span>
+            · Offer: <strong><%= latest_neg["proposedPrice"] %> MAD</strong>
+            · Listed: <strong><%= latest_neg["product"]["price"] %> MAD</strong>
+          </p>
+        </div>
+
+        <span class={"flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold #{RealtimeGatewayWeb.DashboardLive.status_color(latest_neg["status"])}"}>
+          <%= latest_neg["status"] %>
+        </span>
+
+        <svg class="flex-none h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+
+      </.link>
+    </div>
+  </div>
+<% else %>
+  <div>
+    <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 mt-4">Latest Negotiation</h3>
+    <div class="bg-white rounded-xl ring-1 ring-gray-200 shadow-sm px-6 py-6 text-center">
+      <p class="text-sm text-gray-500">No active negotiations.</p>
+    </div>
+  </div>
+<% end %>
 
         <%!-- Quick links --%>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
@@ -111,40 +144,83 @@
       <% end %>
     <% end %>
 
-    <%!-- ── NEGOTIATIONS TAB ── --%>
-    <%= if @live_action == :negotiations do %>
-      <div class="bg-white shadow-sm ring-1 ring-gray-200 sm:rounded-xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100">
-          <h3 class="text-base font-semibold text-gray-900">My Negotiations</h3>
-          <p class="text-sm text-gray-500 mt-0.5">Offers on your products or ones you've made.</p>
-        </div>
-        <ul role="list" class="divide-y divide-gray-100">
-          <%= for neg <- @negotiations do %>
-            <li>
-              <.link navigate={~p"/negotiations/#{neg["id"]}"} class="block hover:bg-gray-50 px-6 py-4 transition">
-                <div class="flex items-center justify-between gap-4">
-                  <div class="min-w-0">
-                    <p class="text-sm font-semibold text-gray-900 truncate"><%= neg["product"]["name"] %></p>
-                    <p class="text-xs text-gray-500 mt-0.5">
-                      Offer: <strong><%= neg["proposedPrice"] %> MAD</strong> · Listed: <strong><%= neg["product"]["price"] %> MAD</strong>
-                    </p>
-                  </div>
-                  <span class={"flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold #{RealtimeGatewayWeb.DashboardLive.status_color(neg["status"])}"}>
-                    <%= neg["status"] %>
-                  </span>
-                </div>
-              </.link>
-            </li>
-          <% end %>
-          <%= if Enum.empty?(@negotiations) do %>
-            <li class="px-6 py-12 text-center">
-              <p class="text-sm text-gray-500">No negotiations found.</p>
-              <.link navigate={~p"/products"} class="mt-1 inline-block text-xs text-green-600 hover:underline">Browse products →</.link>
-            </li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
+<%!-- ── NEGOTIATIONS TAB ── --%>
+<%= if @live_action == :negotiations do %>
+  <div class="bg-white shadow-sm ring-1 ring-gray-200 sm:rounded-xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100">
+      <h3 class="text-base font-semibold text-gray-900">My Negotiations</h3>
+      <p class="text-sm text-gray-500 mt-0.5">Offers on your products or ones you've made.</p>
+    </div>
+    <ul role="list" class="divide-y divide-gray-100">
+      <%= for neg <- @negotiations do %>
+        <%
+          # The "other party" depends on whether current user is the farmer or buyer
+          other =
+            if @profile && @profile["id"] == neg["farmerId"],
+              do: neg["buyer"],
+              else: neg["farmer"]
+
+          other_avatar =
+            case other && other["profileInfo"] do
+              info when is_map(info) ->
+                info["avatarUrl"] || info["avatar"] || info["profilePicture"] ||
+                  info["imageUrl"] || info["photo"]
+              info when is_binary(info) -> info
+              _ -> nil
+            end
+
+          other_initial =
+            (other && other["name"] && String.upcase(String.first(String.trim(other["name"])))) || "?"
+        %>
+        <li>
+          <.link navigate={~p"/negotiations/#{neg["id"]}"} class="flex items-center gap-4 hover:bg-gray-50 px-6 py-4 transition">
+
+            <!-- Other party avatar -->
+            <div class="flex-none w-10 h-10 rounded-full overflow-hidden bg-green-100 flex items-center justify-center ring-1 ring-gray-200">
+              <%= if other_avatar do %>
+                <img src={other_avatar} class="w-full h-full object-cover" alt={other && other["name"]} />
+              <% else %>
+                <span class="text-sm font-bold text-green-700"><%= other_initial %></span>
+              <% end %>
+            </div>
+
+            <!-- Negotiation info -->
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <p class="text-sm font-semibold text-gray-900 truncate">
+                  <%= neg["product"]["name"] %>
+                </p>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">
+                <span class="font-medium text-gray-700"><%= other && other["name"] %></span>
+                · Offer: <strong><%= neg["proposedPrice"] %> MAD</strong>
+                · Listed: <strong><%= neg["product"]["price"] %> MAD</strong>
+              </p>
+            </div>
+
+            <!-- Status badge -->
+            <span class={"flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold #{RealtimeGatewayWeb.DashboardLive.status_color(neg["status"])}"}>
+              <%= neg["status"] %>
+            </span>
+
+            <!-- Chevron -->
+            <svg class="flex-none h-4 w-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+
+          </.link>
+        </li>
+      <% end %>
+
+      <%= if Enum.empty?(@negotiations) do %>
+        <li class="px-6 py-12 text-center">
+          <p class="text-sm text-gray-500">No negotiations found.</p>
+          <.link navigate={~p"/products"} class="mt-1 inline-block text-xs text-green-600 hover:underline">Browse products →</.link>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
 
     <%!-- ── PRODUCTS TAB ── --%>
     <%= if @live_action == :products do %>

@@ -10,7 +10,6 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
     user = socket.assigns.current_user
 
     if connected?(socket) do
-      # Subscribe via PubSub – NegotiationChannel broadcasts on this topic
       PubSub.subscribe(RealtimeGateway.PubSub, "negotiation:#{negotiation_id}")
     end
 
@@ -24,6 +23,8 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
       |> assign(:loading, true)
       |> assign(:sending, false)
       |> assign(:negotiation, nil)
+      |> assign(:buyer, nil)
+      |> assign(:farmer, nil)
       |> assign(:messages, [])
       |> assign(:new_message, "")
       |> assign(:typing_users, %{})
@@ -47,7 +48,6 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
       {:ok, negotiation} ->
         messages = negotiation["messages"] || []
 
-        # Also fetch messages separately if not embedded
         messages =
           if messages == [] do
             case ApiClient.get_negotiation_messages(jwt, negotiation_id) do
@@ -60,6 +60,8 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
 
         socket
         |> assign(:negotiation, negotiation)
+        |> assign(:buyer, negotiation["buyer"])
+        |> assign(:farmer, negotiation["farmer"])
         |> assign(:messages, messages)
         |> assign(:loading, false)
         |> assign(
@@ -92,7 +94,6 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
 
       case ApiClient.send_negotiation_message(jwt, negotiation_id, content) do
         {:ok, message} ->
-          # Optimistically add own message directly (channel will broadcast to others)
           own_message = %{
             "id" => message["id"] || generate_temp_id(),
             "content" => content,
@@ -136,7 +137,6 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
 
   @impl true
   def handle_event("typing", _params, socket) do
-    # Broadcast typing via PubSub
     negotiation_id = socket.assigns.negotiation_id
     user_id = socket.assigns.user["id"]
 
@@ -157,7 +157,6 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
       ) do
     user_id = socket.assigns.user["id"]
 
-    # Normalize payload keys (channel sends atom keys, API returns string keys)
     normalized = %{
       "id" => message[:id] || message["id"],
       "content" => message[:content] || message["content"],
@@ -166,7 +165,6 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
         message[:createdAt] || message["createdAt"] || DateTime.utc_now() |> DateTime.to_iso8601()
     }
 
-    # Skip if this is our own message (we add it optimistically on send)
     if normalized["senderId"] == user_id do
       {:noreply, socket}
     else
@@ -248,6 +246,45 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
     negotiation && user["id"] == negotiation["farmerId"]
   end
 
+  # Returns the avatar URL from a user map (buyer or farmer)
+  defp get_avatar(nil), do: nil
+
+  defp get_avatar(user) when is_map(user) do
+    profile = user["profileInfo"]
+
+    cond do
+      is_map(profile) ->
+        profile["avatarUrl"] || profile["avatar"] || profile["profilePicture"] ||
+          profile["imageUrl"] || profile["photo"]
+
+      is_binary(profile) ->
+        # profileInfo might be a raw URL string
+        profile
+
+      true ->
+        nil
+    end
+  end
+
+  # Finds the buyer or farmer map whose id matches sender_id
+  defp sender_info(sender_id, buyer, farmer) do
+    cond do
+      buyer && buyer["id"] == sender_id -> buyer
+      farmer && farmer["id"] == sender_id -> farmer
+      true -> nil
+    end
+  end
+
+  # Initials fallback — takes first letter of name
+  defp initials(nil), do: "?"
+
+  defp initials(user) when is_map(user) do
+    (user["name"] || "?")
+    |> String.trim()
+    |> String.first()
+    |> String.upcase()
+  end
+
   # ── Render ──────────────────────────────────────────────────────────────────
 
   @impl true
@@ -264,6 +301,19 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
                 <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/>
               </svg>
             </.link>
+
+            <!-- Other party avatar in header -->
+            <%= if !@loading && (@buyer || @farmer) do %>
+              <% other = if is_farmer?(@user, @negotiation), do: @buyer, else: @farmer %>
+              <% other_avatar = get_avatar(other) %>
+              <div class="w-8 h-8 rounded-full overflow-hidden bg-green-100 flex-none flex items-center justify-center">
+                <%= if other_avatar do %>
+                  <img src={other_avatar} class="w-full h-full object-cover" alt="avatar" />
+                <% else %>
+                  <span class="text-xs font-bold text-green-700"><%= initials(other) %></span>
+                <% end %>
+              </div>
+            <% end %>
 
             <div>
               <%= if @loading do %>
@@ -309,7 +359,7 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
             </div>
           <% end %>
 
-          <!-- Cancel for either party -->
+          <!-- Cancel for buyer -->
           <%= if !@loading && @negotiation && @negotiation["status"] == "PENDING" && !is_farmer?(@user, @negotiation) do %>
             <button
               phx-click="update_status"
@@ -355,8 +405,23 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
 
             <%= for message <- @messages do %>
               <% is_mine = message["senderId"] == @user["id"] %>
-              <div class={"flex #{if is_mine, do: "justify-end", else: "justify-start"}"}>
-                <div class={"max-w-sm lg:max-w-md"}>
+              <% sender = sender_info(message["senderId"], @buyer, @farmer) %>
+              <% avatar = get_avatar(sender) %>
+
+              <div class={"flex items-end gap-2 #{if is_mine, do: "justify-end", else: "justify-start"}"}>
+
+                <!-- Avatar on the LEFT for the other party -->
+                <%= if !is_mine do %>
+                  <div class="flex-none w-8 h-8 rounded-full overflow-hidden bg-green-100 flex items-center justify-center self-end mb-4">
+                    <%= if avatar do %>
+                      <img src={avatar} class="w-full h-full object-cover" alt={sender && sender["name"]} />
+                    <% else %>
+                      <span class="text-xs font-bold text-green-700"><%= initials(sender) %></span>
+                    <% end %>
+                  </div>
+                <% end %>
+
+                <div class="max-w-sm lg:max-w-md">
                   <div class={"px-4 py-2.5 rounded-2xl shadow-sm text-sm #{if is_mine, do: "bg-green-600 text-white rounded-br-sm", else: "bg-white text-gray-900 border border-gray-100 rounded-bl-sm"}"}>
                     <%= message["content"] %>
                   </div>
@@ -364,12 +429,34 @@ defmodule RealtimeGatewayWeb.NegotiationLive do
                     <%= format_time(message["createdAt"]) %>
                   </p>
                 </div>
+
+                <!-- Avatar on the RIGHT for own messages -->
+                <%= if is_mine do %>
+                  <% my_avatar = get_avatar(@user) %>
+                  <div class="flex-none w-8 h-8 rounded-full overflow-hidden bg-green-600 flex items-center justify-center self-end mb-4">
+                    <%= if my_avatar do %>
+                      <img src={my_avatar} class="w-full h-full object-cover" alt="you" />
+                    <% else %>
+                      <span class="text-xs font-bold text-white"><%= initials(@user) %></span>
+                    <% end %>
+                  </div>
+                <% end %>
+
               </div>
             <% end %>
 
             <!-- Typing indicator -->
             <%= if Enum.any?(@typing_users, fn {uid, _} -> uid != @user["id"] end) do %>
-              <div class="flex justify-start">
+              <% other = if is_farmer?(@user, @negotiation), do: @buyer, else: @farmer %>
+              <% other_avatar = get_avatar(other) %>
+              <div class="flex items-end gap-2 justify-start">
+                <div class="flex-none w-8 h-8 rounded-full overflow-hidden bg-green-100 flex items-center justify-center">
+                  <%= if other_avatar do %>
+                    <img src={other_avatar} class="w-full h-full object-cover" alt="typing" />
+                  <% else %>
+                    <span class="text-xs font-bold text-green-700"><%= initials(other) %></span>
+                  <% end %>
+                </div>
                 <div class="px-4 py-2.5 rounded-2xl bg-white border border-gray-100 shadow-sm">
                   <div class="flex items-center gap-1">
                     <span class="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style="animation-delay:0ms"></span>
