@@ -1,7 +1,7 @@
 import { Socket, Channel } from 'phoenix';
 import { useAuthStore } from '../store/authStore';
 
-const PHOENIX_URL = 'ws://192.168.1.7:4000/socket';
+const PHOENIX_URL = 'ws://192.168.1.36:4000/socket';
 
 export interface NegotiationMessage {
   id: string;
@@ -49,7 +49,7 @@ class PhoenixService {
 
   private connect() {
     const token = useAuthStore.getState().token;
-    
+
     if (!token) {
       console.warn('No auth token available for Phoenix connection');
       return;
@@ -58,8 +58,9 @@ class PhoenixService {
     this.socket = new Socket(PHOENIX_URL, {
       params: { token },
       reconnectAfterMs: (tries) => {
-       return Math.min(1000 * Math.pow(2, tries - 1), 30000);
-  },    });
+        return Math.min(1000 * Math.pow(2, tries - 1), 30000);
+      },
+    });
 
     this.socket.onOpen(() => {
       console.log('Phoenix socket connected');
@@ -83,9 +84,9 @@ class PhoenixService {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-      
+
       console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
-      
+
       setTimeout(() => {
         this.connect();
       }, delay);
@@ -219,7 +220,7 @@ class PhoenixService {
 
   disconnect() {
     this.leaveNegotiationChannel();
-    
+
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;

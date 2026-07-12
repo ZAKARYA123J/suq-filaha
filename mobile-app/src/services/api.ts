@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosError } from 'axios';
 import { useAuthStore } from '../store/authStore';
 import { ProductFilter } from '../types';
 
-const API_BASE_URL = 'https://macbook.euplectes-rockhopper.ts.net/api';
+const API_BASE_URL = 'http://192.168.1.36:3000/api';
 
 export interface OrderItem {
     id: string;
