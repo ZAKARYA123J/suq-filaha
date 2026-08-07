@@ -8,6 +8,9 @@
 import Config
 
 config :realtime_gateway,
+  phoenix_api_key: System.get_env("PHOENIX_API_KEY") || "your-secret-api-key",
+  jwt_secret:
+    System.get_env("JWT_SECRET") || "your-super-secret-jwt-key-change-this-in-production",
   generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint
@@ -20,6 +23,16 @@ config :realtime_gateway, RealtimeGatewayWeb.Endpoint,
   ],
   pubsub_server: RealtimeGateway.PubSub,
   live_view: [signing_salt: "PTHoxUSF"]
+
+# Configure esbuild (the version is required)
+config :esbuild,
+  version: "0.17.11",
+  default: [
+    args:
+      ~w(js/app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ]
 
 # Configures the mailer
 #

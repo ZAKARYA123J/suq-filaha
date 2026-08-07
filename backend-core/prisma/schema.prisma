@@ -12,6 +12,23 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+enum UserType {
+  FARMER
+  BUYER
+  ADMIN
+}
+enum NegotiationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
 model User {
   id                String        @id @default(cuid())
   name              String
@@ -22,19 +39,15 @@ model User {
   registrationDate  DateTime      @default(now())
   rating            Float         @default(0.0)
   profileInfo       String?
-  
-  // Relations
   products          Product[]
   ordersAsBuyer     Order[]       @relation("BuyerOrders")
   ordersAsFarmer    Order[]       @relation("FarmerOrders")
   reviewsGiven      Review[]      @relation("ReviewerReviews")
   reviewsReceived   Review[]      @relation("ReviewedUserReviews")
   
-  // Negotiation relations
   negotiationsAsBuyer   Negotiation[] @relation("NegotiationBuyer")
   negotiationsAsFarmer  Negotiation[] @relation("NegotiationFarmer")
   
-  // Chat relations
   chatsAsUser1      Chat[]        @relation("ChatUser1")
   chatsAsUser2      Chat[]        @relation("ChatUser2")
   messages          Message[]
@@ -42,33 +55,35 @@ model User {
   @@map("users")
 }
 
-enum UserType {
-  FARMER
-  BUYER
-  ADMIN
-}
-
 model Product {
   id           String        @id @default(cuid())
   name         String
   category     String
   quantity     Float
+  description String? 
   unit         String
   price        Float
   harvestDate  DateTime?
   quality      String?
-  images       String[]      // Array of image URLs
+  images       String[]    
   isAvailable  Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   
-  // Relations
   farmerId     String
   farmer       User          @relation(fields: [farmerId], references: [id], onDelete: Cascade)
   orders       OrderItem[]
   negotiations Negotiation[]
   
   @@map("products")
+}
+model PhoneVerification {
+  id          String   @id @default(uuid())
+  phoneNumber String   @unique
+  code        String
+  expiresAt   DateTime
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }
 
 model Order {
@@ -81,7 +96,8 @@ model Order {
   notes           String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  
+  negotiationId   String?       @unique
+  negotiation     Negotiation?  @relation(fields: [negotiationId], references: [id])
   // Relations
   buyerId         String
   buyer           User          @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
@@ -95,14 +111,7 @@ model Order {
   @@map("orders")
 }
 
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-}
+
 
 model OrderItem {
   id          String   @id @default(cuid())
@@ -111,7 +120,6 @@ model OrderItem {
   total       Float
   notes       String?
   
-  // Relations
   orderId     String
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   
@@ -129,28 +137,19 @@ model Negotiation {
   startTime     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   
-  // Relations
+
   productId     String
   product       Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
   buyerId       String
   buyer         User            @relation("NegotiationBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
   
   farmerId      String
   farmer        User            @relation("NegotiationFarmer", fields: [farmerId], references: [id], onDelete: Cascade)
-  
+   order         Order?
   messages      NegotiationMessage[]
   
   @@map("negotiations")
-}
-
-enum NegotiationStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  COUNTERED
-  EXPIRED
-  CANCELLED
 }
 
 model NegotiationMessage {
@@ -160,7 +159,7 @@ model NegotiationMessage {
   senderType     UserType
   createdAt      DateTime    @default(now())
   
-  // Relations
+
   negotiationId  String
   negotiation    Negotiation @relation(fields: [negotiationId], references: [id], onDelete: Cascade)
   
@@ -175,7 +174,6 @@ model Review {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
-  // Relations
   reviewerId  String
   reviewer    User      @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
   
@@ -195,7 +193,6 @@ model Chat {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   
-  // Relations
   user1Id           String
   user1             User      @relation("ChatUser1", fields: [user1Id], references: [id], onDelete: Cascade)
   

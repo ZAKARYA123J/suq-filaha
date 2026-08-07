@@ -13,8 +13,10 @@ defmodule RealtimeGateway.Application do
       {Phoenix.PubSub, name: RealtimeGateway.PubSub},
       # Start a worker by calling: RealtimeGateway.Worker.start_link(arg)
       # {RealtimeGateway.Worker, arg},
+      RealtimeGateway.OfflineMessageQueue,
       # Start to serve requests, typically the last entry
-      RealtimeGatewayWeb.Endpoint
+      RealtimeGatewayWeb.Endpoint,
+      RealtimeGatewayWeb.Presence
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

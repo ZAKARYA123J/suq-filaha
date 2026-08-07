@@ -7,6 +7,10 @@ const orderService = new OrderService();
 export class OrderController {
   async create(req: AuthRequest, res: Response) {
     try {
+      const userId=req.user?.userId
+      if(!userId){
+        throw new Error("userId not found")
+      }
       const order = await orderService.createOrder(req.user!.userId, req.body);
       res.status(201).json(order);
     } catch (error: any) {
@@ -28,7 +32,7 @@ export class OrderController {
 
   async getById(req: AuthRequest, res: Response) {
     try {
-      const order = await orderService.getOrderById(req.params.id);
+      const order = await orderService.getOrderById(req.params.id as any) 
       if (!order) {
         return res.status(404).json({ error: 'Order not found' });
       }
@@ -41,7 +45,7 @@ export class OrderController {
   async updateStatus(req: AuthRequest, res: Response) {
     try {
       const order = await orderService.updateOrderStatus(
-        req.params.id,
+        req.params.id as any,
         req.user!.userId,
         req.body.status
       );
